@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jeeplus.modules.platform.dao.WindKongDao">
+    <select id="getUserDayFlowCount" resultType="java.util.Map">
+        SELECT
+          pfm_user_id AS user_id,
+          IFNULL(TRUNCATE(SUM(prof_or_loss) / 1000, 3), 0) winLossMoney
+        FROM kk_lottery_order
+        <where>
+            1 = 1
+            <if test="userId != null and userId != ''">
+                and pfm_user_id = #{userId}
+            </if>
+            <if test="beginDate != null and beginDate != ''">
+                AND create_date &gt;= #{beginDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND create_date &lt;= #{endDate}
+            </if>
+        </where>
+        GROUP BY user_id
+    </select>
+
+    <select id="getTodayUserList" resultType="java.lang.String">
+        SELECT
+            DISTINCT(pfm_user_id) AS user_id
+        FROM kk_user_money_flow umf,
+            kk_platform_user kpu
+        WHERE kpu.status = 1
+              and umf.create_date >= #{startTime}
+              and  umf.create_date <![CDATA[<]]> #{endTime}
+              AND kpu.user_id = umf.pfm_user_id
+        UNION
+        SELECT
+        DISTINCT(pfm_user_id) AS user_id
+        FROM kk_user_charge_withdraw f,
+        kk_platform_user kpu
+        WHERE kpu.status = 1
+        and f.check_date >= #{startTime}
+        and  f.check_date <![CDATA[<]]> #{endTime}
+        AND kpu.user_id = f.pfm_user_id
+        UNION
+        SELECT
+        DISTINCT(pfm_user_id) AS user_id
+        FROM kk_lottery_order o,
+        kk_platform_user kpu
+        WHERE kpu.status = 1
+        and  o.kj_date >= #{startTime}
+        and  o.kj_date <![CDATA[<]]> #{endTime}
+        AND kpu.user_id = o.pfm_user_id
+    </select>
+
+
+
+    <select id="getMaxTimeByToday" resultType="java.lang.String">
+        select  date_format(max(create_time),'%Y-%m-%d %H:%i:%s') from kk_user_day_flow_increment
+         where  stlm_date= #{stlmDate}
+    </select>
+
+    <select id="getNowDateTime" resultType="java.lang.String">
+        select  date_format(now(),'%Y-%m-%d %H:%i:%s') from dual
+    </select>
+
+
+    <!-- 估计是kk_user_day_flow_count表是记录用户以天为单位的盈亏金额，一个用户一天在该表中只有一条记录 -->
+    <select id="getGameDay" resultType="java.lang.Integer">
+        SELECT prof_loss_money FROM kk_user_day_flow_count WHERE user_id=#{uid} and count_touzhu_money>0
+        <if test="windKong.sDate != null and windKong.eDate != null and windKong.sDate != '' and windKong.eDate != ''">
+            and stlm_date >= #{windKong.sDate} AND stlm_date <![CDATA[<=]]> #{windKong.eDate}
+        </if>
+    </select>
+
+    <select id="getTdWinlossMoney" resultType="java.lang.Double">
+        SELECT
+            IFNULL(SUM(prof_or_loss), 0)
+        FROM kk_lottery_order
+        WHERE pfm_user_id = #{user_id}
+        AND TO_DAYS(NOW())=TO_DAYS(create_date)
+        AND   status IN ('0','1','3')
+    </select>
+
+    <select id="getTdBetMoney" resultType="java.math.BigInteger">
+        SELECT IFNULL(sum(bet_valid_money),0)
+        FROM kk_lottery_order
+        WHERE pfm_user_id =#{user_id} AND TO_DAYS(NOW())=TO_DAYS(create_date)
+         AND   status IN ('0','1','3')
+    </select>
+
+    <select id="getV2GameDay" resultType="java.lang.String">
+        SELECT
+        DATE_FORMAT(create_date,'%Y-%m-%d') create_date
+        FROM kk_lottery_order
+        WHERE pfm_user_id=#{user_id}
+        <if test="beginDate != null and beginDate != ''">
+            AND create_date &gt;= #{beginDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND create_date &lt;= #{endDate}
+        </if>
+        GROUP BY DATE_FORMAT(create_date,'%Y-%m-%d')
+    </select>
+
+    <select id="getSomeDayWinlossMoney" resultType="java.lang.Double">
+        SELECT
+            IFNULL(TRUNCATE(SUM(prof_or_loss) / 1000, 3), 0) winLossMoney
+        FROM kk_lottery_order
+        WHERE pfm_user_id=#{user_id}
+              AND create_date like concat(#{day},'%')
+    </select>
+
+
+    <select id="findList" resultType="com.jeeplus.modules.platform.entity.WindKong">
+
+        select
+        t.user_id as userId,
+        u.agent_by as agent,
+        ls.level_description	as levelName,
+        u.real_name  as  userName,
+        ag.user_id   as  parentAgent,
+        u.remark     as  remarks,
+        sum(t.count_rukuan_money) as  countRukuanMoney,
+        sum(t.count_chukuan_money) as  countChukuanMoney,
+        sum(t.prof_loss_money)   as   winLossMoney,
+        sum(case when t.prof_loss_money>0 then 1 else 0 end) as winDay,
+        sum(case when t.count_touzhu_money>0 then 1 else 0 end) as gameDay,
+        ifnull(TRUNCATE(sum(case when t.prof_loss_money>0 then 1 else 0 end)/sum(case when t.count_touzhu_money>0 then 1 else 0 end),2),0.00)  as winRate
+        from  kk_user_day_flow_count  t
+        join  kk_platform_user  u  on  t.user_id = u.user_id
+        left join kk_user_level_set ls on ls.id =u.user_level
+        left join kk_user_agent_info  ag on ag.user_code = u.agent_code
+        where 1=1
+         <!--  and  u.user_level!=3   测试层的不展示-->
+
+        <if test="searchContext != null and searchContext != ''">
+
+            <choose>
+                <!--  默认根据用户名来查询 -->
+                <when test="searchPersonInfo == null or searchPersonInfo == ''">
+                    AND t.user_id like concat('%', #{searchContext},'%')
+                </when>
+
+                <when test="searchPersonInfo == '1'.toString()">
+                    AND t.user_id like concat('%', #{searchContext},'%')
+                </when>
+
+                <when test="searchPersonInfo == '2'.toString()">
+                    AND u.real_name like concat('%', #{searchContext},'%')
+                </when>
+
+                <otherwise>
+                </otherwise>
+
+            </choose>
+
+        </if>
+
+        <if test="beginDate != null and beginDate != ''">
+            AND t.stlm_date &gt;= DATE_FORMAT(#{beginDate},'%Y%m%d')
+        </if>
+
+        <if test="endDate != null and endDate != ''">
+            AND t.stlm_date &lt;=  DATE_FORMAT(#{endDate},'%Y%m%d')
+        </if>
+
+        group by t.user_id
+        ORDER BY winLossMoney desc
+
+
+    </select>
+
+
+
+    <select id="getTodayCrkuanMoney" resultType="java.util.Map">
+        SELECT IFNULL(sum(change_money),0) total_money, COUNT(pfm_user_id) num
+        FROM kk_user_charge_withdraw
+        WHERE pfm_user_id =#{userId} AND change_type_status =#{type} AND status ='1' AND TO_DAYS(NOW())=TO_DAYS(check_date)
+        and check_date >= #{startTime}
+        and  check_date <![CDATA[<]]> #{endTime}
+        <if test="rkType != null and rkType != ''">
+            AND  rk_type = #{rkType}
+        </if>
+    </select>
+
+
+    <select id="getTodayManualrkMoney" resultType="java.util.Map">
+        SELECT IFNULL(SUM(umf.change_money),0) AS total_money,
+        COUNT(umf.pfm_user_id) num
+         FROM kk_user_money_flow umf
+          WHERE umf.pfm_user_id=#{userId}
+          and umf.change_type ='10' and  umf.change_type_status='01'
+          AND TO_DAYS(NOW())=TO_DAYS(umf.create_date)
+          and umf.create_date >= #{startTime}
+          and  umf.create_date <![CDATA[<]]> #{endTime}
+    </select>
+
+    <select id="getTodayChukuanMoney" resultType="java.util.Map">
+        SELECT IFNULL(sum(change_money),0) total_money, COUNT(pfm_user_id) num
+        FROM kk_user_charge_withdraw
+        WHERE pfm_user_id =#{userId} AND change_type_status ='06' AND status ='1'
+        AND TO_DAYS(NOW())=TO_DAYS(check_date)
+        and check_date >= #{startTime}
+        and  check_date <![CDATA[<]]> #{endTime}
+        AND  (rk_type!='3' or rk_type is null)
+    </select>
+
+    <select id="getTodayManualCkMoney" resultType="java.util.Map">
+        SELECT IFNULL(SUM(umf.change_money),0) AS total_money,
+        COUNT(umf.pfm_user_id) num
+         FROM kk_user_money_flow umf
+          WHERE umf.pfm_user_id=#{userId}
+          and umf.change_type ='11' and  umf.change_type_status='01'
+          AND TO_DAYS(NOW())=TO_DAYS(umf.create_date)
+          and umf.create_date >= #{startTime}
+          and  umf.create_date <![CDATA[<]]> #{endTime}
+    </select>
+
+
+    <select id="getTodayOtherMoneyAndTimes" resultType="java.util.Map">
+            SELECT IFNULL(SUM(umf.change_money),0) AS otherMoney,
+            COUNT(umf.pfm_user_id) num
+            FROM kk_user_money_flow umf
+            WHERE umf.pfm_user_id=#{userId}
+            and((umf.change_type ='10' and  umf.change_type_status='25')
+            or (umf.change_type ='11' and  umf.change_type_status='08'))
+            AND TO_DAYS(NOW())=TO_DAYS(umf.create_date)
+           and umf.create_date >= #{startTime}
+           and  umf.create_date <![CDATA[<]]> #{endTime}
+    </select>
+
+    <select id="getTodayHdMoneyAndTimes" resultType="java.util.Map">
+        SELECT IFNULL(SUM(umf.change_money),0) AS hdMoney,
+        COUNT(umf.pfm_user_id) num
+        FROM kk_user_money_flow umf
+        WHERE umf.pfm_user_id=#{userId}
+        and umf.change_type ='05' and umf.games_flag='01'
+        AND TO_DAYS(NOW())=TO_DAYS(umf.create_date)
+        and umf.create_date >= #{startTime}
+        and  umf.create_date <![CDATA[<]]> #{endTime}
+    </select>
+
+    <select id="getTodayBackwaterMoneyAndTimes" resultType="java.util.Map">
+        SELECT IFNULL(SUM(umf.change_money),0) AS backwaterMoney,
+        COUNT(umf.pfm_user_id) num
+        FROM kk_user_money_flow umf
+        WHERE umf.pfm_user_id=#{userId}
+        and umf.change_type ='07' and umf.games_flag='01'
+        AND TO_DAYS(NOW())=TO_DAYS(umf.create_date)
+        and umf.create_date >= #{startTime}
+        and  umf.create_date <![CDATA[<]]> #{endTime}
+    </select>
+
+
+    <select id="findTodayUserBetInfo" resultType="java.util.Map">
+        SELECT IFNULL(sum(obtain_dml),0)                 as  countDml,
+        IFNULL(sum(bet_valid_money),0)            as  betMoney,
+        IFNULL(SUM(prof_or_loss), 0) AS winlossMoney,
+        IFNULL(sum(win_money),0)            as  winMoney
+        FROM kk_lottery_order
+        WHERE pfm_user_id =#{userId} AND TO_DAYS(NOW())=TO_DAYS(kj_date)
+        and  kj_date >= #{startTime}
+        and  kj_date <![CDATA[<]]> #{endTime}
+        AND   status IN ('1','3')
+    </select>
+
+
+
+    <insert id="saveTodayFlowCount" >
+
+        insert into kk_user_day_flow_count
+        (user_id,count_rukuan_times,count_rukuan_money,online_rukuan_times,online_rukuan_money,bank_rukuan_times,bank_rukuan_money
+        ,manual_rukuan_times,manual_rukuan_money,count_chukuan_times,count_chukuan_money,manual_chukuan_times,manual_chukuan_money,
+        count_touzhu_money,count_zhjiang_money,count_huodong_times,count_huodong_money,count_backwater_times,count_backwater_money,
+        count_dml,prof_loss_money,other_money,total_project_money,stlm_date,create_time)
+        values
+            (
+            #{userId},
+            #{countRukuanTimes},
+            #{countRukuanMoney},
+            #{onlineRukuanTimes},
+            #{onlineRukuanMoney},
+            #{bankRukuanTimes},
+            #{bankRukuanMoney},
+            #{manualRukuanTimes},
+
+            #{manualRukuanMoney},
+            #{countChukuanTimes},
+            #{countChukuanMoney},
+            #{manualChukuanTimes},
+            #{manualChukuanMoney},
+
+            #{countTouzhuMoney},
+            #{countZhjiangMoney},
+            #{countHuodongTimes},
+            #{countHuodongMoney},
+            #{countBackwaterTimes},
+
+            #{countBackwaterMoney},
+            #{countDml},
+            #{profLossMoney},
+            #{otherMoney},
+            #{totalProjectMoney},
+            #{stlmDate},
+            now()
+            )
+
+        on
+        DUPLICATE key update
+        count_rukuan_times= count_rukuan_times+#{countRukuanTimes},
+        count_rukuan_money= count_rukuan_money+#{countRukuanMoney},
+        online_rukuan_times=online_rukuan_times+#{onlineRukuanTimes},
+        online_rukuan_money= online_rukuan_money+#{onlineRukuanMoney},
+        bank_rukuan_times =  bank_rukuan_times+#{bankRukuanTimes},
+        bank_rukuan_money = bank_rukuan_money+#{bankRukuanMoney},
+        manual_rukuan_times = manual_rukuan_times+#{manualRukuanTimes},
+        manual_rukuan_money = manual_rukuan_money+#{manualRukuanMoney},
+        count_chukuan_times= count_chukuan_times+#{countChukuanTimes},
+        count_chukuan_money= count_chukuan_money+#{countChukuanMoney},
+        manual_chukuan_times= manual_chukuan_times+#{manualChukuanTimes},
+        manual_chukuan_money= manual_chukuan_money+ #{manualChukuanMoney},
+        count_touzhu_money=count_touzhu_money+#{countTouzhuMoney},
+        count_zhjiang_money=count_zhjiang_money+ #{countZhjiangMoney},
+        count_huodong_times= count_huodong_times+ #{countHuodongTimes},
+        count_huodong_money= count_huodong_money+#{countHuodongMoney},
+        count_backwater_times= count_backwater_times+#{countBackwaterTimes},
+        count_backwater_money= count_backwater_money+#{countBackwaterMoney},
+        count_dml=count_dml+#{countDml},
+        prof_loss_money=prof_loss_money+#{profLossMoney},
+        other_money=other_money+#{otherMoney},
+        total_project_money = total_project_money+#{totalProjectMoney},
+        create_time=now()
+    </insert>
+
+
+    <insert id="insertDayFlowIncrement">
+        insert  into  kk_user_day_flow_increment(stlm_date,create_time)
+        values(#{stlmDate},STR_TO_DATE(#{endTime},'%Y-%m-%d %H:%i:%s'))
+
+    </insert>
+
+
+</mapper>

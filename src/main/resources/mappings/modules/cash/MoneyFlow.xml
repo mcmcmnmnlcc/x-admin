@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.cash.dao.MoneyFlowDao">
+
+	<sql id="moneyFlowColumns">
+		f.id,
+		f.pfm_user_id                                       AS userId ,
+		f.games_flag                                        as gamesFlag,
+		f.change_type                                       as changeType,
+		f.change_type_status                                as changeTypeStatus,
+		f.change_money										as changeCoinInt,
+		truncate(f.change_money/1000,2)                     as changeCoin ,
+		truncate(f.change_balance/1000,2)                   as balance ,
+		f.create_date                                        as timeCreated,
+		f.opt_user											as optUser,
+		f.remark
+
+	</sql>
+
+	<select id="get" resultType="com.jeeplus.modules.cash.entity.UserMoneyFlow">
+		select
+		     <include refid="moneyFlowColumns"/>
+		from kk_user_money_flow f
+		where
+		   f.change_type_status ='06' and change_type ='02' and games_flag='01'  and f.id =#{id}
+	</select>
+
+	<select id="findList" resultType="com.jeeplus.modules.cash.entity.UserMoneyFlow">
+	  select
+		<include refid="moneyFlowColumns"/>
+		from kk_user_money_flow f
+		where
+		 1=1
+		<if test="beginDate != null and beginDate != ''">
+			AND f.create_date &gt;= #{beginDate}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			AND f.create_date &lt;= #{endDate}
+		</if>
+		<if test="userId != null and userId != ''">
+			AND f.pfm_user_id = #{userId}
+		</if>
+		<if test="checkPerson != null and checkPerson != ''">
+			AND f.check_person = #{checkPerson}
+		</if>
+		<if test="changeType != null and changeType != ''">
+			AND f.change_type = #{changeType}
+		</if>
+		<if test="gamesFlag != null and gamesFlag != ''">
+			AND f.games_flag = #{gamesFlag}
+		</if>
+		<if test="changeTypeStatus != null and changeTypeStatus != ''">
+			AND f.change_type_status = #{changeTypeStatus}
+		</if>
+		ORDER BY f.id desc
+	</select>
+
+	<select id="getAll" resultType="java.lang.Double">
+		select
+		IFNULL(truncate(sum(f.change_money)/1000,2),0)
+		from kk_user_money_flow f
+		where
+		1=1
+		<if test="beginDate != null and beginDate != ''">
+			AND f.create_date &gt;= #{beginDate}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			AND f.create_date &lt;= #{endDate}
+		</if>
+		<if test="userId != null and userId != ''">
+			AND f.pfm_user_id = #{userId}
+		</if>
+		<if test="checkPerson != null and checkPerson != ''">
+			AND f.check_person = #{checkPerson}
+		</if>
+		<if test="changeType != null and changeType != ''">
+			AND f.change_type = #{changeType}
+		</if>
+		<if test="gamesFlag != null and gamesFlag != ''">
+			AND f.games_flag = #{gamesFlag}
+		</if>
+		<if test="changeTypeStatus != null and changeTypeStatus != ''">
+			AND f.change_type_status = #{changeTypeStatus}
+		</if>
+	</select>
+
+	<!--修改用户出款的审核状态-->
+	<!--<update id="editDrawUserCash">
+		update kk_user_money_flow
+		set
+		check_person=#{checkPerson},
+		check_info =#{checkInfo},
+		check_date=#{checkDate}
+		where id=#{id}
+	</update>-->
+
+   <update id="editPfmUserMoney">
+	   update kk_platform_user
+	           set total_money=total_money+#{changeCoinInt}
+	           where user_id =#{userId}
+   </update>
+
+	<insert id="saveMoneyFlow">
+		insert into kk_user_money_flow (pfm_user_id,games_flag,change_type,change_type_status,change_money,change_balance,remark,opt_user,create_date)
+		values (#{userId},#{gamesFlag},#{changeType},#{changeTypeStatus},#{changeCoinInt},#{balanceInt},#{remark},#{optUser},now())
+	</insert>
+
+	<select id="getChangeTypeStatusByChangeType" resultType="java.util.Map">
+		SELECT type_detail as value,
+			detail as label
+		FROM kk_user_flow_type_detail WHERE type=#{type}
+		order by sort
+	</select>
+
+	<select id="getStatusNameByChangeTypeAndChangeTypeStatus" resultType="java.lang.String">
+		SELECT detail FROM kk_user_flow_type_detail WHERE type=#{type} and type_detail=#{type_detail}
+	</select>
+</mapper>

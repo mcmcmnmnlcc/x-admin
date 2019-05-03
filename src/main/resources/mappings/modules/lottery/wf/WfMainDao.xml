@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.lottery.dao.wf.WfMainDao">
+    
+	<sql id="wfMainColumns">
+		a.id AS "id",
+		a.wf_group_id AS "wfGroup.groupFlag",
+		wg.id    AS "wfGroup.id",
+		a.name AS "name",
+		a.wf_flag AS "wfFlag",
+		a.num_flag AS "numFlag",
+		a.lottery_type AS "lotteryTpye",
+		a.wf_explain AS "wfExplain",
+		a.example AS "example",
+		a.methodhelp AS "methodHelp",
+		a.status AS "status",
+		a.max_zhus as maxZhus,
+		a.sort AS "sort",
+		a.create_date AS "createDate",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag",
+		wg.name AS "wfGroup.name"
+	</sql>
+	
+	<sql id="wfMainJoins">
+		LEFT JOIN kk_wf_group wg ON wg.group_flag = a.wf_group_id
+	</sql>
+	
+    
+	<select id="get" resultType="com.jeeplus.modules.lottery.entity.wf.WfMain" >
+		SELECT 
+			<include refid="wfMainColumns"/>
+		FROM kk_wf a
+		<include refid="wfMainJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.lottery.entity.wf.WfMain" >
+		SELECT 
+			<include refid="wfMainColumns"/>
+		FROM kk_wf a
+		<include refid="wfMainJoins"/>
+		<where>
+			1=1
+			<if test="name != null and name != ''">
+				AND a.name = #{name}
+			</if>
+			<if test="lotteryTpye != null and lotteryTpye != ''">
+				AND a.lottery_type = #{lotteryTpye}
+			</if>
+			<if test="status != null and status != ''">
+				AND a.status = #{status}
+			</if>
+		</where>
+		ORDER BY a.sort ASC
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO kk_wf(
+			wf_group_id,
+			name,
+			wf_flag,
+			num_flag,
+			lottery_type,
+			wf_explain,
+			example,
+			methodhelp,
+			status,
+			max_zhus,
+			sort,
+			create_date,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			(select group_flag from kk_wf_group where id =#{wfGroup.id}),
+			#{name},
+			#{wfFlag},
+			#{numFlag},
+			#{lotteryTpye},
+			#{wfExplain},
+			#{example},
+			#{methodHelp},
+			#{status},
+			#{maxZhus},
+			#{sort},
+			#{createDate},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE kk_wf SET
+			wf_group_id = (select group_flag from kk_wf_group where id =#{wfGroup.id}),
+			name = #{name},
+			wf_flag = #{wfFlag},
+			num_flag = #{numFlag},
+			lottery_type = #{lotteryTpye},
+			wf_explain = #{wfExplain},
+			example = #{example},
+			methodhelp = #{methodHelp},
+			status = #{status},
+			max_zhus = #{maxZhus},
+			sort = #{sort},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_wf
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE kk_wf SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.lottery.entity.wf.WfMain" statementType="STATEMENT">
+		select * FROM kk_wf  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

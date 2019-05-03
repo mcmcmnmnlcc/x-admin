@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.platform.dao.PfmUserBankDao">
+
+	<sql id="pfmUserBankColumns">
+		f.id,
+		f.pfm_user_id                                          AS userId ,
+		f.bank_id											   AS bankId,
+		f.user_name                                            as userName,
+		f.bank_no                                              as bankNo,
+		f.bank_branch_no                                       as bankBranchNo ,
+		f.account_no                                           as accountNo ,
+		f.remark                                               as remark ,
+		f.create_time                                          as createTime,
+		f.update_time                                          as updateTime
+	</sql>
+
+	<select id="get" resultType="com.jeeplus.modules.platform.entity.PfmUserBank">
+		select
+		     <include refid="pfmUserBankColumns"/>
+		from kk_pfm_user_bank f
+		where
+		   f.id =#{id}
+	</select>
+
+	<select id="findList" resultType="com.jeeplus.modules.platform.entity.PfmUserBank">
+	  select
+		<include refid="pfmUserBankColumns"/>
+		from kk_pfm_user_bank f
+		where
+		 1=1
+		<if test="beginDate != null and beginDate != ''">
+			AND f.create_time &gt;= #{beginDate}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			AND f.create_time &lt;= #{endDate}
+		</if>
+		<if test="userId != null and userId != ''">
+			AND f.pfm_user_id = #{userId}
+		</if>
+		<if test="userName != null and userName != ''">
+			AND f.user_name like concat('%', #{userName},'%')
+		</if>
+		<if test="accountNo != null and accountNo != ''">
+			AND f.account_no like concat('%', #{accountNo},'%')
+		</if>
+		ORDER BY f.id desc
+	</select>
+
+	<update id="editUserBankProp">
+		update kk_pfm_user_bank
+		       set user_name =#{userName},
+		           bank_no =#{bankNo},
+		           bank_id =#{bankId},
+		           bank_branch_no=#{bankBranchNo},
+		           account_no =#{accountNo},
+		           remark =#{remark},
+		           update_time =#{updateTime}
+		       where id =#{id}
+	</update>
+
+	<select id="findUsernameByUserId" resultType="com.jeeplus.modules.platform.entity.PfmUserBank">
+		SELECT
+		<include refid="pfmUserBankColumns"/>
+		FROM kk_pfm_user_bank f WHERE f.pfm_user_id = #{userId}
+	</select>
+
+	<delete id="removeBankByUserId" parameterType="java.lang.String">
+		DELETE FROM kk_pfm_user_bank where pfm_user_id =#{userId}
+
+	</delete>
+
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_pfm_user_bank
+		WHERE id = #{id}
+	</update>
+
+	<!--更新用户表的绑卡状态-->
+	<update id="updateUserInfoBankState">
+		update   kk_platform_user
+         set  bank_status='0'
+         where user_id = #{userId};
+	</update>
+
+</mapper>

@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.cash.dao.UserOutMoneyFlowDao">
+
+	<sql id="moneyFlowColumns">
+		f.id,
+		f.pfm_user_id                                       AS userId ,
+		l.level_description                                 as levelName,
+		truncate(f.change_money/1000,2)                    as changeMoney,
+		f.log_ip											as logIp,
+		f.status                                             ,
+		b.account_no                                         ,
+		b.user_name                                          ,
+		b.bank_no                                            ,
+		f.create_date                                        ,
+		f.check_info                                         ,
+		f.check_person                                       ,
+		f.check_date,
+		u.remark											as remarks
+	</sql>
+
+	<select id="get" resultType="com.jeeplus.modules.cash.entity.PfmUserChargeWithDraw">
+		select
+		f.id,
+		f.pfm_user_id AS userId,
+		u.total_money As currentMoney,
+        f.change_money AS changeMoney,
+        f.log_ip AS logIp,
+        f.STATUS,
+        b.account_no AS accountNo,
+        b.user_name AS userName,
+        b.bank_no AS bankNo,
+        b.bank_branch_no as   bankBranchNo,
+        f.create_date,
+        f.check_info,
+        f.check_person,
+        IFNULL(f.lock_flag,'0')    as lockFlag,
+        f.check_date,
+        u.remark AS remarks,
+		u.agent_by as agentBy,
+		u.count_chukuan_money as countChukuanMoney
+    from kk_user_charge_withdraw f left join kk_pfm_user_bank b on f.pfm_user_id =b.pfm_user_id
+        join kk_platform_user u on f.pfm_user_id = u.user_id
+    where
+        f.change_type_status ='06'  and f.id =#{id}
+</select>
+
+<select id="findList" resultType="com.jeeplus.modules.cash.entity.PfmUserChargeWithDraw">
+    select
+    f.id,
+    f.pfm_user_id AS userId,
+    f.order_no as orderNo,
+    l.level_description AS levelName,
+	u.total_money As currentMoney,
+    f.log_ip AS logIp,
+    f.create_date as createDate,
+    f.check_date as checkDate,
+    f.pay_user as userName,
+	f.change_money AS changeMoney,
+    f.STATUS,
+	f.check_person as checkPerson,
+	IFNULL(f.lock_flag,'0')    as lockFlag,
+    u.remark AS remarks,
+	u.agent_by as agentBy,
+	u.count_chukuan_money as countChukuanMoney
+    from kk_user_charge_withdraw f
+    join kk_platform_user u on f.pfm_user_id = u.user_id
+    <!--left join kk_sys_config sc  on u.agent_domain=sc.value  and sc.type='agent_domain' -->
+    left join kk_user_level_set l on u.user_level = l.id
+    where
+    f.change_type_status ='06'
+    <if test="searchContext != null and searchContext != ''">
+
+        <choose>
+        <!--  默认根据用户名来查询 -->
+			<when test="searchPersonInfo == null or searchPersonInfo == ''">
+				AND f.pfm_user_id like concat('%', #{searchContext},'%')
+			</when>
+
+			<when test="searchPersonInfo == '1'.toString()">
+				AND f.pfm_user_id like concat('%', #{searchContext},'%')
+			</when>
+
+			<when test="searchPersonInfo == '2'.toString()">
+				AND f.pay_user like concat('%', #{searchContext},'%')
+			</when>
+
+			<when test="searchPersonInfo == '3'.toString()">
+				AND f.order_no like concat('%', #{searchContext},'%')
+			</when>
+
+
+			<otherwise>
+			</otherwise>
+
+			</choose>
+
+		</if>
+
+	<if test="searchTime == null or searchTime == '' or searchTime == '1'.toString()">
+		<if test="beginDate != null and beginDate != ''">
+			AND f.create_date &gt;= #{beginDate}
+		</if>
+
+		<if test="endDate != null and endDate != ''">
+			AND f.create_date &lt;= #{endDate}
+		</if>
+
+	</if>
+
+	<if test="searchTime == '2'.toString()">
+
+		<if test="beginDate != null and beginDate != ''">
+			AND f.check_date &gt;= #{beginDate}
+		</if>
+
+		<if test="endDate != null and endDate != ''">
+			AND f.check_date &lt;= #{endDate}
+		</if>
+
+	</if>
+
+		<!-- agent 在此是选择框的value  -->
+		<if test="agent != null and agent != ''">
+			AND u.agent_by = #{agent}
+		</if>
+
+		<!--  在此是选择框的value  -->
+		<if test="levelName != null and levelName != ''">
+			AND l.id = #{levelName}
+		</if>
+
+
+		<if test="status != null and status != ''">
+			AND f.status = #{status}
+		</if>
+
+		<if test="logIp != null and logIp != ''">
+			AND f.log_ip = #{logIp}
+		</if>
+
+		<if test="bMoney != null and bMoney != ''">
+			AND f.change_money &gt;= #{bMoney}*1000
+		</if>
+		<if test="eMoney != null and eMoney != ''">
+			AND f.change_money &lt;= #{eMoney}*1000
+		</if>
+		ORDER BY f.create_date desc
+
+	</select>
+
+	<!--修改用户出款的审核状态-->
+	<update id="editDrawUserCash">
+		update kk_user_charge_withdraw
+		set status=#{status}  ,
+		check_person=#{checkPerson},
+		check_info =#{checkInfo},
+		check_date=now()
+		where id=#{id}
+	</update>
+
+	<!--提款失败时候-->
+	<update id="editUserMoneyWithdrawFail">
+		update kk_platform_user
+		set  total_money=total_money+#{changeMoney},
+		freeze_money=freeze_money-#{changeMoney}
+		where user_id =#{userId}
+	</update>
+	<!--提款成功时候-->
+	<update id="editUserMoneyWithdrawSuccss">
+		update kk_platform_user
+		set
+		freeze_money=freeze_money-#{changeMoney},
+		current_dml=0,
+		count_chukuan_times=count_chukuan_times+1,
+		count_chukuan_money=count_chukuan_money+#{changeMoney},
+		chuk_dml=0
+		where user_id =#{userId}
+	</update>
+
+
+	<insert id="saveMoneyFlow">
+		insert into kk_user_money_flow (pfm_user_id,games_flag,change_type,change_type_status,change_money,change_balance,remark,opt_user,create_date)
+		select #{userId},#{gamesFlag},#{changeType},#{changeTypeStatus},#{changeCoinInt},total_money,#{remark},#{optUser},now() from kk_platform_user where user_id =#{userId}
+	</insert>
+
+	<select id="getOutCount" resultType="java.lang.Integer">
+		select count(1) from kk_user_charge_withdraw where change_type_status ='06' and status ='3'
+	</select>
+
+	<!--获取一段时间的充值和取款总额-->
+	<select id="calcUserMoney" resultType="java.lang.Double">
+		select
+		truncate(IFNULL(sum(change_money),0)/1000,3)           as changeMoney
+		from kk_user_charge_withdraw
+		where  `status` ='1' and change_type_status =#{type} and pfm_user_id =#{userId}
+		<if test="createDate != null">
+			and create_date >= #{createDate}
+		</if>
+	</select>
+
+	<!--获取用户的彩票盈亏金额-->
+	<select id="caclUserPlMoney" resultType="java.lang.Double">
+		select
+		truncate(IFNULL(sum(prof_or_loss),0)/1000,3)    plmoney
+		from kk_lottery_order
+		where pfm_user_id =#{userId} and status in ('1','3')
+		<if test="createDate != null">
+			and create_date >= #{createDate}
+		</if>
+	</select>
+
+	<!--统计总的出款金额-->
+	<select id="getCountChargeMomeny" resultType="java.lang.Long">
+		select
+		ifnull(sum(temp.changeMoney), 0)
+		from
+		(
+		select
+		f.id,
+		f.pfm_user_id AS userId,
+		f.order_no as orderNo,
+		u.agent_by as agentBy,
+		l.level_description AS levelName,
+		u.total_money As currentMoney,
+		f.log_ip AS logIp,
+		f.create_date as createDate,
+		f.check_date as checkDate,
+		f.pay_user as userName,
+		f.change_money AS changeMoney,
+		f.STATUS,
+		u.remark AS remarks
+		from kk_user_charge_withdraw f
+		join kk_platform_user u on f.pfm_user_id = u.user_id
+		<!--left join kk_sys_config sc  on u.agent_domain=sc.value  and sc.type='agent_domain' -->
+		left join kk_user_level_set l on u.user_level = l.id
+		where
+		f.change_type_status ='06'
+
+		<if test="searchContext != null and searchContext != ''">
+
+			<choose>
+				<!--  默认根据用户名来查询 -->
+				<when test="searchPersonInfo == null or searchPersonInfo == ''">
+					AND f.pfm_user_id like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '1'.toString()">
+					AND f.pfm_user_id like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '2'.toString()">
+					AND f.pay_user like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '3'.toString()">
+					AND f.order_no like concat('%', #{searchContext},'%')
+				</when>
+
+
+				<otherwise>
+				</otherwise>
+
+			</choose>
+
+		</if>
+
+		<if test="searchTime == null or searchTime == '' or searchTime == '1'.toString()">
+			<if test="beginDate != null and beginDate != ''">
+				AND f.create_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND f.create_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="searchTime == '2'.toString()">
+
+			<if test="beginDate != null and beginDate != ''">
+				AND f.check_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND f.check_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<!-- agent 在此是选择框的value  -->
+		<if test="agent != null and agent != ''">
+			AND u.agent_by = #{agent}
+		</if>
+
+		<!--  在此是选择框的value  -->
+		<if test="levelName != null and levelName != ''">
+			AND l.id = #{levelName}
+		</if>
+
+
+		<if test="status != null and status != ''">
+			AND f.status = #{status}
+		</if>
+
+		<if test="logIp != null and logIp != ''">
+			AND f.log_ip = #{logIp}
+		</if>
+
+		<if test="bMoney != null and bMoney != ''">
+			AND f.change_money &gt;= #{bMoney}*1000
+		</if>
+		<if test="eMoney != null and eMoney != ''">
+			AND f.change_money &lt;= #{eMoney}*1000
+		</if>
+
+
+		) temp
+	</select>
+
+	<!--统计总的状态条数-->
+	<select id="getTotalStatusBy" resultType="java.lang.Integer">
+		select
+		count(temp.status)
+		from
+		(
+		select
+		f.id,
+		f.pfm_user_id AS userId,
+		f.order_no as orderNo,
+		u.agent_by as agentBy,
+		l.level_description AS levelName,
+		u.total_money As currentMoney,
+		f.log_ip AS logIp,
+		f.create_date as createDate,
+		f.check_date as checkDate,
+		f.pay_user as userName,
+		f.change_money AS changeMoney,
+		f.STATUS,
+		u.remark AS remarks
+		from kk_user_charge_withdraw f
+		join kk_platform_user u on f.pfm_user_id = u.user_id
+		<!--left join kk_sys_config sc  on u.agent_domain=sc.value  and sc.type='agent_domain' -->
+		left join kk_user_level_set l on u.user_level = l.id
+		where
+		f.change_type_status ='06'
+
+		<if test="searchContext != null and searchContext != ''">
+
+			<choose>
+				<!--  默认根据用户名来查询 -->
+				<when test="searchPersonInfo == null or searchPersonInfo == ''">
+					AND f.pfm_user_id like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '1'.toString()">
+					AND f.pfm_user_id like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '2'.toString()">
+					AND f.pay_user like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '3'.toString()">
+					AND f.order_no like concat('%', #{searchContext},'%')
+				</when>
+
+
+				<otherwise>
+				</otherwise>
+
+			</choose>
+
+		</if>
+
+		<if test="searchTime == null or searchTime == '' or searchTime == '1'.toString()">
+			<if test="beginDate != null and beginDate != ''">
+				AND f.create_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND f.create_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="searchTime == '2'.toString()">
+
+			<if test="beginDate != null and beginDate != ''">
+				AND f.check_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND f.check_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<!-- agent 在此是选择框的value  -->
+		<if test="agent != null and agent != ''">
+			AND u.agent_by = #{agent}
+		</if>
+
+		<!--  在此是选择框的value  -->
+		<if test="levelName != null and levelName != ''">
+			AND l.id = #{levelName}
+		</if>
+
+
+		<if test="status != null and status != ''">
+			AND f.status = #{status}
+		</if>
+
+		<if test="logIp != null and logIp != ''">
+			AND f.log_ip = #{logIp}
+		</if>
+
+		<if test="bMoney != null and bMoney != ''">
+			AND f.change_money &gt;= #{bMoney}*1000
+		</if>
+		<if test="eMoney != null and eMoney != ''">
+			AND f.change_money &lt;= #{eMoney}*1000
+		</if>
+
+		) temp
+	</select>
+
+	<select id="getTodayTotalOut"  resultType="java.lang.Integer">
+		select count(*)
+		from kk_user_charge_withdraw f
+		where  f.status='1'
+			   and   f.change_type_status ='06'
+			   and  f.pfm_user_id = (select pfm_user_id from kk_user_charge_withdraw where id=#{id})
+			   and  TO_DAYS(f.check_date) = TO_DAYS(now())
+	</select>
+
+	<select id="getTotalOut"  resultType="java.lang.Integer">
+		select count(*)
+		from kk_user_charge_withdraw f
+		where  f.status='1'
+			   and   f.change_type_status ='06'
+			   and  f.pfm_user_id = (select pfm_user_id from kk_user_charge_withdraw where id=#{id})
+	</select>
+
+	<update id="saveRemark">
+	 UPDATE kk_platform_user
+	 set
+	remark =#{remark}
+	where user_id=#{userId}
+	</update>
+
+	<update id="lockRecord">
+		UPDATE kk_user_charge_withdraw
+		set
+		lock_flag ='1'
+		where id=#{id}
+	</update>
+
+	<update id="unlockRecord">
+		UPDATE kk_user_charge_withdraw
+		set
+		lock_flag ='0'
+		where id=#{id}
+	</update>
+
+
+</mapper>

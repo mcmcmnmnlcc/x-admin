@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.sys.dao.UserDao">
+
+    <sql id="userColumns">
+    	a.id,
+    	a.company_id AS "company.id",
+    	a.office_id AS "office.id",
+    	a.login_name AS loginName,
+    	a.password,
+    	a.no,
+		a.name,
+		a.email,
+		a.phone,
+		a.mobile,
+		a.user_type,
+		a.login_ip,
+		a.login_date,
+		a.remarks,
+		a.login_flag,
+		a.photo,
+		a.qrcode,
+		a.sign,
+		a.create_by AS "createBy.id",
+		a.create_date as createDate,
+		a.update_by AS "updateBy.id",
+		a.update_date as updateDate,
+		a.del_flag,
+		a.hide_flag as hideFlag,
+		a.agent_flag as agentFlag
+    </sql>
+
+	<select id="getPermissionByUsername" resultType="java.lang.String" parameterType="java.lang.String">
+			select DISTINCT(m.permission) from sys_menu m LEFT JOIN sys_role_menu rm on m.id=rm.menu_id
+			LEFT JOIN sys_role r on rm.role_id = r.id
+			LEFT JOIN sys_user_role ur on r.id = ur.role_id
+			LEFT JOIN sys_user u on ur.user_id =u.id
+			where u.login_name=#{loginName}
+	</select>
+
+
+
+
+	<!-- 根据用户id获得用户 -->
+	<select id="getById" parameterType="java.lang.String"  resultType="com.jeeplus.modules.sys.entity.User">
+		SELECT
+		<include refid="userColumns"/>
+		FROM sys_user a
+		WHERE a.id = #{id}
+	</select>
+
+	<!--  -->
+	<select id="getByLoginName" parameterType="java.lang.String"  resultType="com.jeeplus.modules.sys.entity.User">
+		SELECT
+		<include refid="userColumns"/>
+		FROM sys_user a
+		WHERE a.login_name = #{loginName}
+	</select>
+
+	<!-- 插入用户 -->
+	<insert id="insert">
+		INSERT INTO sys_user(
+		id,
+		company_id,
+		office_id,
+		login_name,
+		password,
+		no,
+		name,
+		email,
+		phone,
+		mobile,
+		user_type,
+		create_by,
+		create_date,
+		update_by,
+		update_date,
+		remarks,
+		login_flag,
+		photo,
+		qrcode,
+		del_flag,
+		agent_flag
+		) VALUES (
+		#{id},
+		#{company.id},
+		#{office.id},
+		#{loginName},
+		#{password},
+		#{no},
+		#{name},
+		#{email},
+		#{phone},
+		#{mobile},
+		#{userType},
+		#{createBy.id},
+		#{createDate},
+		#{updateBy.id},
+		#{updateDate},
+		#{remarks},
+		#{loginFlag},
+		#{photo},
+		#{qrCode},
+		#{delFlag},
+		#{agentFlag}
+		)
+	</insert>
+
+	<!-- 更新用户 -->
+	<update id="update">
+		UPDATE sys_user SET
+		company_id = #{company.id},
+		office_id = #{office.id},
+		login_name = #{loginName},
+		password = #{password},
+		no = #{no},
+		name = #{name},
+		email = #{email},
+		phone = #{phone},
+		mobile = #{mobile},
+		user_type = #{userType},
+		update_by = #{updateBy.id},
+		update_date = #{updateDate},
+		remarks = #{remarks},
+		login_flag = #{loginFlag},
+		photo = #{photo},
+		qrcode = #{qrCode},
+		agent_flag=#{agentFlag}
+		WHERE id = #{id}
+	</update>
+
+	<!-- 向用户角色中间表插入数据 -->
+	<insert id="insertRoles" parameterType="java.util.List">
+		INSERT INTO sys_user_role(user_id,role_id) VALUES
+		<foreach collection="list" item="item" index="index" separator=",">
+			(#{item.userId},#{item.roleId})
+		</foreach>
+	</insert>
+
+
+	<!-- 物理删除用户 -->
+	<update id="delete">
+		DELETE FROM sys_user
+		WHERE id = #{userId}
+	</update>
+
+	<!-- 删除用户和角色关联表数据 -->
+	<delete id="deleteUserRole">
+		DELETE FROM sys_user_role WHERE user_id = #{id}
+	</delete>
+
+	
+</mapper>

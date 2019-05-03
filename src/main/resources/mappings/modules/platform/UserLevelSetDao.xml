@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.platform.dao.UserLevelSetDao">
+    
+	<sql id="userLevelSetColumns">
+		a.id AS "id",
+		a.level_name AS "levelName",
+		a.level_description AS "levelDescription",
+		a.start_time AS "startTime",
+		a.end_time AS "endTime",
+		truncate(a.count_touzhu_money/1000,1) AS "countTouzhuMoney",
+		truncate(a.count_rukuan_money/1000,1) AS "countRukuanMoney",
+		truncate(a.count_dml/1000,1) AS "countDml",
+		a.level_sort AS "levelSort",
+		a.remark AS "remark",
+		a.create_time AS "createTime"
+	</sql>
+	
+	<sql id="userLevelSetJoins">
+	</sql>
+	
+    
+	<select id="get" resultType="com.jeeplus.modules.platform.entity.UserLevelSet" >
+		SELECT 
+			<include refid="userLevelSetColumns"/>
+		FROM kk_user_level_set a
+		<include refid="userLevelSetJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.platform.entity.UserLevelSet" >
+		SELECT 
+			<include refid="userLevelSetColumns"/>
+		FROM kk_user_level_set a
+		<include refid="userLevelSetJoins"/>
+		<where>
+			<if test="levelDescription != null and levelDescription != ''">
+				AND a.level_description LIKE concat('%',#{levelDescription},'%')
+			</if>
+		</where>
+	</select>
+	
+	<select id="findAllList" resultType="com.jeeplus.modules.platform.entity.UserLevelSet" >
+		SELECT 
+			<include refid="userLevelSetColumns"/>
+		FROM kk_user_level_set a
+		<include refid="userLevelSetJoins"/>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO kk_user_level_set(
+			level_name,
+			level_description,
+			start_time,
+			end_time,
+			count_touzhu_money,
+			count_rukuan_money,
+			count_dml,
+			level_sort,
+			remark,
+			create_time
+		) VALUES (
+			#{levelName},
+			#{levelDescription},
+			#{startTime},
+			#{endTime},
+			#{countTouzhuMoney}*1000,
+			#{countRukuanMoney}*1000,
+			#{countDml}*1000,
+			#{levelSort},
+			#{remark},
+			#{createDate}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE kk_user_level_set SET 	
+			id = #{id},
+			level_name = #{levelName},
+			level_description = #{levelDescription},
+			start_time = #{startTime},
+			end_time = #{endTime},
+			count_touzhu_money = #{countTouzhuMoney}*1000,
+			count_rukuan_money = #{countRukuanMoney}*1000,
+			count_dml = #{countDml}*1000,
+			count_user = #{countUser},
+			level_sort = #{levelSort},
+			remark = #{remark},
+			create_time = #{createTime}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_user_level_set
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE kk_user_level_set SET 
+			del_flag = #{delFlag}
+		WHERE id = #{id}
+	</update>
+
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.platform.entity.UserLevelSet" statementType="STATEMENT">
+		select * FROM kk_user_level_set  where ${propertyName} = '${value}'
+	</select>
+
+	<update id="upLevelCountUser">
+		UPDATE kk_user_level_set SET count_user =
+		<if test="type == 1">
+			count_user + #{num}
+		</if>
+		<if test="type == 2">
+			CASE WHEN count_user > 0 THEN count_user - #{num}
+			ELSE 0
+			END
+		</if>
+		WHERE id = #{id}
+	</update>
+
+	<select id="getCountByLevelId" resultType="java.lang.Integer">
+		SELECT count(1) FROM kk_platform_user WHERE user_level=#{id}
+	</select>
+	
+</mapper>

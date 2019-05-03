@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.lottery.dao.wf.WfPlChildDao">
+    
+	<sql id="wfPlChildColumns">
+		a.id AS "id",
+		a.wf_flag AS "wfMain.wfFlag",
+		a.name AS "name",
+		a.pl_flag AS "plFlag",
+		a.num_flag AS "numFlag",
+		a.award_money/1000 AS "awardMoney",
+		a.max_return AS "maxReturn",
+		a.rebate_convert_num AS "rebateConvertNum",
+		a.base_award_money AS "baseAwardMoney",
+		a.agent_rebate_money AS "agentRebateMoney",
+		a.sort AS "sort"
+	</sql>
+	
+	<sql id="wfPlChildJoins">
+		LEFT JOIN kk_wf b ON b.wf_flag = a.wf_flag
+	</sql>
+	
+    
+	<select id="get" resultType="com.jeeplus.modules.lottery.entity.wf.WfPlChild" >
+		SELECT 
+			<include refid="wfPlChildColumns"/>
+		FROM kk_wf_pl_child a
+		<include refid="wfPlChildJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.lottery.entity.wf.WfPlChild" >
+		SELECT 
+			<include refid="wfPlChildColumns"/>
+		FROM kk_wf_pl_child a
+		<include refid="wfPlChildJoins"/>
+		<where>
+			<if test="wfMain != null and wfMain.wfFlag != null and wfMain.wfFlag != ''">
+				AND a.wf_flag = #{wfMain.wfFlag}
+			</if>
+		</where>
+		ORDER BY a.sort ASC
+	</select>
+
+	<!-- 根据玩法标志查询所属赔率 -->
+	<select id="findListByWfFlag" resultType="com.jeeplus.modules.lottery.entity.wf.WfPlChild" >
+		SELECT
+		<include refid="wfPlChildColumns"/>
+		FROM kk_wf_pl_child a
+		<include refid="wfPlChildJoins"/>
+		WHERE a.wf_flag = #{wfFlag}
+		ORDER BY a.sort ASC
+	</select>
+	
+	<select id="findAllList" resultType="com.jeeplus.modules.lottery.entity.wf.WfPlChild" >
+		SELECT 
+			<include refid="wfPlChildColumns"/>
+		FROM kk_wf_pl_child a
+		<include refid="wfPlChildJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO kk_wf_pl_child(
+			wf_flag,
+			name,
+			pl_flag,
+			num_flag,
+			award_money,
+			max_return,
+			rebate_convert_num,
+			base_award_money,
+		 	agent_rebate_money,
+			sort
+		) VALUES (
+			#{wfMain.wfFlag},
+			#{name},
+			#{plFlag},
+			#{numFlag},
+			#{awardMoney},
+			#{maxReturn},
+			#{rebateConvertNum},
+			#{baseAwardMoney},
+			#{agentRebateMoney},
+			#{sort}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE kk_wf_pl_child SET 	
+			wf_flag = #{wfMain.wfFlag},
+			name = #{name},
+			pl_flag = #{plFlag},
+			num_flag = #{numFlag},
+			award_money = #{awardMoney},
+			max_return = #{maxReturn},
+			rebate_convert_num = #{rebateConvertNum},
+			base_award_money = #{baseAwardMoney},
+			agent_rebate_money = #{agentRebateMoney},
+			sort = #{sort}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_wf_pl_child
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE wf_flag = #{wfMain.wfFlag}
+			</otherwise>
+		</choose>
+	</update>
+
+	<!--物理删除,根据赔率id删除-->
+	<update id="deleteById">
+		DELETE FROM kk_wf_pl_child
+		WHERE id = #{id}
+	</update>
+	<!--物理删除,根据玩法标识删除-->
+	<update id="deleteByWfFlag" parameterType="java.lang.String">
+		DELETE FROM kk_wf_pl_child
+		WHERE wf_flag = #{wfFlag}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE kk_wf_pl_child SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE wf_flag = #{wfMain.wfFlag}
+			</otherwise>
+		</choose>
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.lottery.entity.wf.WfPlChild" statementType="STATEMENT">
+		select * FROM kk_wf_pl_child  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

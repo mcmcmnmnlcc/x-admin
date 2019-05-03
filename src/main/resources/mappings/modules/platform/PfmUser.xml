@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.platform.dao.PlatformUserDao">
+
+	<sql id="pfmUserColumns">
+		f.id,
+		f.user_id                                          	AS userId ,
+		f.nick_name										   	AS nickName,
+		f.user_level										AS userLevel,
+		f.user_level_lock									as userLevelLock,
+		f.status                                           	as status,
+		f.image_url                                        	as imageUrl,
+		f.bank_status                                      	as bankStatus ,
+		truncate(f.total_money/1000,2)                     	as totalMoney ,
+		f.total_money                    					as balanceInt ,
+		f.create_date                                      	as createDate,
+		f.count_rukuan_times								AS countRukuanTimes,
+		f.count_chukuan_times								AS countChukuanTimes,
+		truncate(f.count_rukuan_money/1000,3)               as countRukuanMoney ,
+		truncate(f.count_chukuan_money/1000,3)              as countChukuanMoney ,
+		truncate(f.count_dml/1000,3)                     	as countDml ,
+		truncate(f.count_touzhu_money/1000,3)               as countTouzhuMoney ,
+		truncate(f.count_zhjiang_money/1000,3)              as countZhjiangMoney ,
+		truncate(f.count_huodong_money/1000,3)              as countHuodongMoney ,
+		truncate(f.chuk_dml/1000,3)              as chukDml ,
+		truncate(f.current_dml/1000,3)              as currentDml ,
+		f.user_permission									AS userPermission,
+		f.remark,
+		f.register_ip										as registerIp,
+		f.login_ip											as loginIp,
+		f.phone,
+		f.qq,
+		f.wechat,
+		b.user_name 								as realName,
+		ls.level_description								as levelName,
+		sc.reserved 								as agent,
+		f.agent_by 								as agentBy
+	</sql>
+
+	<sql id="pfmUserSetJoins">
+		left join kk_pfm_user_bank b on f.user_id =b.pfm_user_id
+		left join kk_user_level_set ls on ls.id =f.user_level
+		left join kk_sys_agent_domain sc on f.agent_domain=sc.value
+	</sql>
+
+	<select id="findPfmUserByUserId"  resultType="com.jeeplus.modules.platform.entity.PlatformUser">
+		select
+		a.id,
+		a.user_id                                    AS "userId",
+		a.password                                   as password,
+		truncate(a.total_money/1000,2)               AS totalMoney,
+		a.total_money                                AS balanceInt,
+		a.current_dml								AS currentDml,
+		a.chuk_dml									AS chukDml,
+		a.freeze_money                               as freezeMoney,
+		a.count_huodong_money							as countHuodongMoney,
+		IFNULL(a.image_url,'')                       AS imageUrl,
+		a.bank_passwd                                as bankPasswd,
+		a.bank_status                                as bankStatus,
+		a.count_rukuan_times                         as countRukuanTimes,
+		a.count_rukuan_money                         as countRukuanMoney,
+		a.count_chukuan_times                         as countChukuanTimes,
+		a.count_chukuan_money                         as countChukuanMoney,
+		a.remark									 as remark,
+		ls.level_description						 as levelName,
+		a.user_level								 AS userLevel
+		from kk_platform_user  a  left join kk_user_level_set ls on ls.id =a.user_level
+		where a.user_id =#{user_id}
+	</select>
+
+
+	<select id="get" resultType="com.jeeplus.modules.platform.entity.PlatformUser">
+		select
+		f.id,
+		f.user_id                         AS userId ,
+		f.nick_name										   	AS nickName,
+		f.user_level										  AS userLevel,
+		f.user_level_lock									as userLevelLock,
+		f.status                          as status,
+		f.agent_by 								        as agentBy,
+		truncate(f.total_money/1000,2)    as totalMoney ,
+		f.real_name                       AS realName,
+		b.account_no                      As  accountNo,
+		b.bank_branch_no                  As  bankBranch,
+		b.bank_id                         As  bankId,
+		ag.user_id                       as  parentAgent,
+		f.count_rukuan_money           as countRukuanMoney ,
+		f.count_chukuan_money          as countChukuanMoney ,
+		truncate(f.count_rukuan_money/1000,2)     as countRukuanMoneyStr ,
+		truncate(f.count_chukuan_money/1000,2)    as countChukuanMoneyStr ,
+		truncate(f.count_dml/1000,2)    as countDmlStr ,
+		truncate(f.chuk_dml/1000,2)    as chukDmlStr ,
+		concat(IFNULL(truncate(f.chuk_dml/1000,2),'0'),'/',IFNULL(truncate(f.current_dml/1000,2),'0')) as chukDmlCondiction,
+		f.count_dml                    as  countDml,
+		f.user_permission			  AS userPermission,
+		f.phone,
+		f.remark,
+		ag1.user_code as agentCode,
+		f.qq,
+		f.wechat
+		from kk_platform_user f
+		left join kk_pfm_user_bank b on f.user_id =b.pfm_user_id
+		left join kk_user_level_set ls on ls.id =f.user_level
+		left join kk_user_agent_info  ag on ag.user_code = f.agent_code
+		left join kk_user_agent_info  ag1 on ag1.user_id = f.user_id
+		where
+		f.id =#{id}
+	</select>
+
+	<select id="get2" resultType="com.jeeplus.modules.platform.entity.PlatformUser">
+		select
+		<include refid="pfmUserColumns"/>
+		from kk_platform_user f
+		<include refid="pfmUserSetJoins"/>
+		where
+		f.user_id =#{userId}
+	</select>
+
+	<select id="findList" resultType="com.jeeplus.modules.platform.entity.PlatformUser">
+
+		select
+		f.id,
+		f.user_id         AS userId ,
+		f.nick_name				AS nickName,
+		f.real_name             AS  userName,
+		f.user_level			AS userLevel,
+		f.user_level_lock		as userLevelLock,
+		ls.level_description				as levelName,
+		f.agent_by 								  as agentBy,
+		ag.user_id                  as  parentAgent,
+		f.total_money                as totalMoney ,
+		f.count_rukuan_money         as countRukuanMoney ,
+		f.count_chukuan_money        as countChukuanMoney ,
+		f.register_ip										as registerIp,
+		f.login_ip											as loginIp,
+		f.create_date                   as createDate,
+		f.last_login_date               as  lastLoginDate,
+		f.real_name                       AS realName,
+		f.deposit_flag                    AS depositFlag,
+		f.status                        as status
+		from kk_platform_user f
+		left join kk_pfm_user_bank b on f.user_id =b.pfm_user_id
+		left join kk_user_level_set ls on ls.id =f.user_level
+		left join kk_user_agent_info  ag on ag.user_code = f.agent_code
+		<if test="isPersistUser != null and isPersistUser != ''">
+			left  join kk_lottery_order klo  ON f.user_id =klo.pfm_user_id
+			AND  DATE_FORMAT(klo.create_date , '%Y-%m-%d') &gt;= #{betTime}
+			AND  DATE_FORMAT(klo.create_date , '%Y-%m-%d') &lt;= #{betEndTime}
+		</if>
+		<if test="inviteCode != null and inviteCode != ''">
+			left join kk_agent2_invite_code kk on kk.user_id =f.user_id
+			left join kk_agent2_rate c on c.parent_id= kk.user_id
+		</if>
+		where
+		1=1
+		<if test="isPersistUser != null and isPersistUser != ''" >
+			and klo.pfm_user_id is null
+		</if>
+
+		<if test="searchContext != null and searchContext != ''">
+
+			<choose>
+				<!--  默认根据用户名来查询 -->
+				<when test="searchPersonInfo == null or searchPersonInfo == ''">
+					AND f.user_id like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '1'.toString()">
+					AND f.user_id like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '2'.toString()">
+					AND  f.real_name like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '3'.toString()">
+					AND f.phone like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '4'.toString()">
+					AND b.account_no like concat('%', #{searchContext},'%')
+				</when>
+
+				<when test="searchPersonInfo == '5'.toString()">
+					AND ag.user_id like concat('%', #{searchContext},'%')
+				</when>
+
+
+				<otherwise>
+				</otherwise>
+
+			</choose>
+
+		</if>
+
+
+		<if test="ipContext != null and ipContext != ''">
+
+			<choose>
+				<!--  默认根据登陆ip来查询 -->
+				<when test="selectIp == null or selectIp == ''">
+					AND f.login_ip like concat('%', #{ipContext},'%')
+				</when>
+
+				<when test="selectIp == '1'.toString()">
+					AND f.login_ip like concat('%', #{ipContext},'%')
+				</when>
+
+				<when test="selectIp == '2'.toString()">
+					AND f.register_ip like concat('%', #{ipContext},'%')
+				</when>
+
+
+				<otherwise>
+				</otherwise>
+
+			</choose>
+
+		</if>
+		<if test="agent != null and agent != ''">
+			AND f.agent_by = #{agent}
+		</if>
+
+		<if test="inviteCode != null and inviteCode != ''">
+			AND  kk.invite_code =#{inviteCode}  OR c.parent_id =#{inviteCode}
+		</if>
+
+		<if test="levelName != null and levelName != ''">
+			AND f.user_level = #{levelName}
+		</if>
+
+		<if test="paichuCeshi == '1'.toString()">
+			AND f.user_level != 3
+		</if>
+
+		<if test="status != null and status != ''">
+			AND f.status = #{status}
+		</if>
+
+		<if test="depositFlag != null and depositFlag != ''">
+			AND f.deposit_flag = #{depositFlag}
+		</if>
+
+
+		<if test="searchTime == null or searchTime == '' or searchTime == '1'.toString()">
+			<if test="beginDate != null and beginDate != ''">
+				AND f.create_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND f.create_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="searchTime == '2'.toString()">
+
+			<if test="beginDate != null and beginDate != ''">
+				AND f.last_login_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND f.last_login_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+
+		<if test="onlineUser != null and onlineUser != '' and onlineUser.size() > 0">
+			AND f.user_id IN
+			<foreach collection="onlineUser" index="index" item="item" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		ORDER BY f.create_date desc
+
+	</select>
+
+	<update id="editUserProp">
+		update kk_platform_user
+		<set>
+			<if test="status !=null ">
+				status =#{status},
+			</if>
+			<if test="remark !=null ">
+				remark =#{remark},
+			</if>
+			<if test="password !=null ">
+				password =#{password},
+			</if>
+			<if test="bankPasswd !=null ">
+				bank_passwd =#{bankPasswd},
+			</if>
+			<if test="bankStatus !=null ">
+				bank_status =#{bankStatus},
+			</if>
+			<if test="userPermission !=null ">
+				user_permission =#{userPermission},
+			</if>
+			<if test="userLevel !=null ">
+				user_level =#{userLevel},
+			</if>
+			<if test="phone !=null ">
+				phone =#{phone},
+			</if>
+			<if test="wechat !=null ">
+				wechat =#{wechat},
+			</if>
+			<if test="qq !=null ">
+				qq =#{qq},
+			</if>
+		</set>
+		<choose>
+			<when test="id !=null and id != ''">
+				where id =#{id}
+			</when>
+			<otherwise>
+				where user_id =#{userId}
+			</otherwise>
+		</choose>
+	</update>
+
+	<update id="editPfmUserProp">
+		UPDATE kk_platform_user
+		<set>
+			<if test="balanceInt !=null ">
+				total_money =#{balanceInt},
+			</if>
+			<if test="chukDml !=null ">
+				chuk_dml =#{chukDml},
+			</if>
+			<if test="countHuodongMoney !=null ">
+				count_huodong_money =#{countHuodongMoney},
+			</if>
+			<if test="freezeMoney !=null ">
+				freeze_money =#{freezeMoney},
+			</if>
+			<if test="imageUrl !=null ">
+				image_url =#{imageUrl},
+			</if>
+			<if test="password !=null ">
+				password =#{password},
+			</if>
+			<if test="bankStatus !=null ">
+				bank_status =#{bankStatus},
+			</if>
+			<if test="bankPasswd !=null ">
+				bank_passwd =#{bankPasswd},
+			</if>
+			<if test="countRukuanTimes !=null ">
+				count_rukuan_times =#{countRukuanTimes},
+			</if>
+
+			<if test="countRukuanMoney !=null ">
+				count_rukuan_money =#{countRukuanMoney},
+			</if>
+			<if test="countChukuanTimes !=null ">
+				count_chukuan_times =#{countChukuanTimes},
+			</if>
+			<if test="countChukuanMoney !=null ">
+				count_chukuan_money =#{countChukuanMoney},
+			</if>
+			<if test="userLevel !=null ">
+				user_level =#{userLevel},
+			</if>
+			<if test="userLevelLock !=null ">
+				user_level_lock =#{userLevelLock},
+			</if>
+
+			<if test="depositFlag !=null">
+				deposit_flag =#{depositFlag},
+			</if>
+
+			<if test="remark !=null ">
+				remark =#{remark},
+			</if>
+		</set>
+		where user_id=#{userId}
+	</update>
+
+	<select id="getUserLevelNameByLevelId" resultType="java.lang.String">
+		SELECT level_description FROM kk_user_level_set WHERE id = #{userLevel}
+	</select>
+
+	<update id="editUserLevelToOtherLevel">
+		UPDATE kk_platform_user SET user_level = #{id} where user_level = #{upId} and user_level_lock=0
+	</update>
+
+	<select id="findListToLevel" resultType="com.jeeplus.modules.platform.entity.PlatformUser">
+		select
+		<include refid="pfmUserColumns"/>
+		from kk_platform_user f
+		<include refid="pfmUserSetJoins"/>
+		where
+		1=1
+		<if test="usersForLevel != null and usersForLevel != ''">
+			AND f.user_id IN
+			<foreach collection="usersForLevel" index="index" item="item" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		<if test="userLevel != null">
+			and user_level =#{userLevel}
+		</if>
+
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY f.id desc
+			</otherwise>
+		</choose>
+	</select>
+
+	<select id="todayRegistUserNum" resultType="java.lang.Integer">
+		SELECT count(1) FROM kk_platform_user WHERE to_days(create_date)=to_days(now())
+	</select>
+
+
+	<select id="todayAgentRegistUserNum" resultType="java.lang.Integer">
+		SELECT count(1) FROM kk_platform_user WHERE to_days(create_date)=to_days(now())  AND  agent_by =#{agent}
+	</select>
+
+
+	<update id="upPwdErrLog">
+		UPDATE kk_user_pwd_err_log SET times=0,update_time = now() WHERE user_id=#{userId}
+	</update>
+
+	<update id="updateBankStatusByUserId">
+		UPDATE kk_platform_user SET bank_status = '0' WHERE user_id=#{userId}
+	</update>
+
+
+	<select id="caclAgentCountAndMoney"  resultType="java.util.Map">
+		select count(*) as count, truncate(IFNULL(sum(u.total_money),0)/1000,2) as totalMoney  from  kk_platform_user u
+		where  agent_code = (select user_code from  kk_user_agent_info where user_id = #{userId})
+	</select>
+
+	<update id="updateBasicInfo">
+		update kk_platform_user
+		<set>
+			<if test="status !=null and status != ''">
+				status =#{status},
+			</if>
+
+			<if test="userLevel !=null and userLevel != '' ">
+				user_level =#{userLevel},
+			</if>
+
+			<if test="nickName !=null">
+				nick_name =#{nickName},
+			</if>
+
+			<if test="phone !=null ">
+				phone =#{phone},
+				hd_phone =#{phone},
+			</if>
+			<if test="wechat !=null ">
+				wechat =#{wechat},
+			</if>
+			<if test="qq !=null ">
+				qq =#{qq},
+			</if>
+
+			<if test="password !=null ">
+				password =#{password},
+			</if>
+			<if test="bankPasswd !=null ">
+				bank_passwd =#{bankPasswd},
+			</if>
+
+			<if test="remark !=null ">
+				remark =#{remark},
+			</if>
+
+		</set>
+		<choose>
+			<when test="id !=null and id != ''">
+				where id =#{id}
+			</when>
+			<otherwise>
+				where user_id =#{userId}
+			</otherwise>
+		</choose>
+	</update>
+
+
+	<update id="updateUserBankInfo">
+
+		update kk_pfm_user_bank
+		<set>
+			<if test="bankId !=null and bankId != ''">
+				bank_id =#{bankId},
+			</if>
+			<if test="bankBranch !=null and bankBranch != ''">
+				bank_branch_no =#{bankBranch},
+			</if>
+
+			<if test="accountNo !=null and accountNo != ''">
+				account_no =#{accountNo},
+			</if>
+
+		</set>
+		where pfm_user_id =#{userId}
+	</update>
+
+
+	<select id="existUserName"  resultType="java.lang.Integer">
+		select count(*)
+		from kk_platform_user where  real_name = #{realName}
+	</select>
+
+	<update id="updateUserName">
+		update  kk_platform_user
+		set  real_name = #{realName}
+		where  id =#{id}
+	</update>
+
+	<update id="updateBankUserName">
+		update  kk_pfm_user_bank
+		set  user_name = #{realName}
+		where  pfm_user_id =#{userId}
+	</update>
+
+	<select id="existParentAgent"  resultType="java.lang.String">
+		select user_code as userCode
+		from kk_user_agent_info where  user_id = #{parentAgent}
+	</select>
+
+
+	<update id="updateParentAgent">
+		update  kk_platform_user
+		set  agent_code = #{agentCode}
+		where  id =#{id}
+	</update>
+
+
+	<select id="isFirstCharge"  resultType="java.lang.Integer">
+
+		select count(*)  from  kk_user_charge_withdraw where pfm_user_id=#{userId}
+		and  change_type_status='05'   and  status='1'
+	</select>
+
+	<update id="updateStatus">
+		update  kk_platform_user
+		set  status = #{status}
+		where  user_id =#{userId}
+	</update>
+
+	<select id="findAccountNo"  resultType="java.lang.Integer">
+		select count(*)
+		from kk_pfm_user_bank where  account_no = #{accountNo}
+	</select>
+
+</mapper>

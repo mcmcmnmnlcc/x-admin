@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.cash.dao.ThirdBankAccountDao">
+
+	<sql id="thirdBankColumns">
+		f.id,
+		f.channel_name                             	 AS  channelName,
+		f.channel_flag                               AS  channelFlag,
+		f.merchant_no                                AS  merchantNo,
+		f.secret_key             					 AS  secretKey,
+		f.sort                                       AS  sort,
+		f.status                             		 AS  status,
+		f.request_url                                AS  requestUrl,
+		f.request_url2                               AS  requestUrl2,
+		f.notify_url                                 AS  notifyUrl
+	</sql>
+
+	<select id="get" resultType="com.jeeplus.modules.cash.entity.ThirdAccountNo">
+		select
+		     <include refid="thirdBankColumns"/>
+		from kk_third_charge_channel f
+		where
+		   f.id =#{id}
+	</select>
+
+	<select id="findList" resultType="com.jeeplus.modules.cash.entity.ThirdAccountNo">
+	  select
+		<include refid="thirdBankColumns"/>
+		from kk_third_charge_channel f
+		where
+		1=1
+		<if test="channelName != null and channelName != ''">
+			AND f.channel_name = #{channelName}
+		</if>
+		<if test="channelFlag != null and channelFlag != ''">
+			AND f.channel_flag = #{typeId}
+		</if>
+		<if test="status != null and status != ''">
+			AND f.status = #{status}
+		</if>
+		ORDER BY f.id desc
+	</select>
+
+
+	<insert id="insert">
+		INSERT INTO kk_third_charge_channel(
+		channel_name,
+		channel_flag,
+		merchant_no,
+		secret_key,
+		sort,
+		status,
+		request_url,
+		request_url2,
+		notify_url
+		) VALUES (
+		#{channelName},
+		#{channelFlag},
+		#{merchantNo},
+		#{secretKey},
+		#{sort},
+		#{status},
+		#{requestUrl},
+		#{requestUrl2},
+		#{notifyUrl}
+		)
+	</insert>
+
+	<!--修改第三方账户的属性信息-->
+	<update id="update">
+		update kk_third_charge_channel
+		set channel_name           =#{channelName}  ,
+		    channel_flag            =#{channelFlag},
+		    merchant_no             =#{merchantNo},
+		    secret_key              =#{secretKey},
+		    sort            		=#{sort},
+		    status            		=#{status},
+		    request_url             =#{requestUrl},
+		    request_url2            =#{requestUrl2},
+		    notify_url              =#{notifyUrl}
+		where id=#{id}
+	</update>
+
+
+
+	<delete  id="delete">
+		DELETE FROM kk_third_charge_channel WHERE id = #{id}
+	</delete>
+
+	<!--  <select id="findChargeChannel" resultType="java.util.Map">
+        select type_name typeName,position
+              from kk_third_charge_channel
+              where type =1
+              order by POSITION
+      </select>
+   -->
+</mapper>

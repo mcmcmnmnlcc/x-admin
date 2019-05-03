@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.lottery.dao.order.LotteryGenDanOrderDao">
+
+
+	<sql id="lotteryOrderColumns">
+
+	</sql>
+
+	<sql id="lotteryOrderJoins">
+		left join kk_lottery_type l on a.lottery_id =l.flag
+		left join kk_wf wf on a.wf_flag =wf.wf_flag
+	</sql>
+
+
+	<select id="get" resultType="com.jeeplus.modules.lottery.entity.order.LotteryGenDanOrder" >
+		select
+		a.id AS "id",
+		a.pfm_user_id  as   'pfmUserId',
+		a.gd_number    as    'gdNumber',
+		a.order_number as  'orderNumber',
+		a.commission ,
+		a.back_rate as 'backRate',
+		a.lottery_id  as 'lotteryId',
+		l.lottery_name as  'lotteryName',
+		a.wf_id  as   'wfId',
+		wf.name  as    'wfName',
+		a.zhuih_count_qs as 'zhuihCountQs',
+		a.zhuih_start_qh as 'zhuihStartQh',
+		a.zhuih_all_qh   as  'zhuihAllQh',
+		a.zhuih_end_qh   as  'zhuihEndQh',
+		a.zhuih_all_bs    as  'zhuihAllBs',
+		a.zhuih_win_stop   as  'zhuihWinStop',
+		a.bet_count      as  'betCount',
+		a.bet_min_money      as  'betMinMoney',
+		a.user_pay_money      as  'userPayMoney',
+		a.gd_total_money      as  'gdTotalMoney',
+		a.gd_total_people      as  'gdTotalPeople',
+		a.create_value         as  'createValue',
+		a.content              as  'content',
+		a.check_flag           as  'checkFlag',
+		a.order_status         as  'orderStatus',
+		a.finish_status        as  'finishStatus',
+		a.create_time          as  'createDate'
+		from  kk_gd_order_info a
+		left join kk_lottery_type l on a.lottery_id =l.flag
+		left join kk_wf wf on a.wf_id =wf.wf_flag
+		WHERE a.id = #{id}
+	</select>
+
+	<select id="findList" resultType="com.jeeplus.modules.lottery.entity.order.LotteryGenDanOrder" >
+
+		select
+		a.id AS "id",
+		a.pfm_user_id  as   'pfmUserId',
+		a.gd_number    as    'gdNumber',
+		a.order_number as  'orderNumber',
+		a.commission ,
+		a.back_rate as 'backRate',
+		a.lottery_id  as 'lotteryId',
+		l.lottery_name as  'lotteryName',
+		a.wf_id  as   'wfId',
+		wf.name  as    'wfName',
+		a.zhuih_count_qs as 'zhuihCountQs',
+		a.zhuih_start_qh as 'zhuihStartQh',
+		a.zhuih_all_qh   as  'zhuihAllQh',
+		a.zhuih_end_qh   as  'zhuihEndQh',
+		a.zhuih_all_bs    as  'zhuihAllBs',
+		a.zhuih_win_stop   as  'zhuihWinStop',
+		a.bet_count      as  'betCount',
+		a.bet_min_money      as  'betMinMoney',
+		a.user_pay_money      as  'userPayMoney',
+		a.gd_total_money      as  'gdTotalMoney',
+		a.gd_total_people      as  'gdTotalPeople',
+		a.create_value         as  'createValue',
+		a.content              as  'content',
+		a.check_flag           as  'checkFlag',
+		a.order_status         as  'orderStatus',
+		a.finish_status        as  'finishStatus',
+		a.create_time          as  'createDate'
+		from  kk_gd_order_info a
+		left join kk_lottery_type l on a.lottery_id =l.flag
+		left join kk_wf wf on a.wf_id =wf.wf_flag
+
+		where
+		1=1
+		<if test="beginDate != null and beginDate != ''">
+			AND a.create_time &gt;= #{beginDate}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			AND a.create_time &lt;= #{endDate}
+		</if>
+
+		<if test="pfmUserId != null and pfmUserId != ''">
+			AND a.pfm_user_id = #{pfmUserId}
+		</if>
+
+		<if test="gdNumber != null and gdNumber != ''">
+			AND a.gd_number = #{gdNumber}
+		</if>
+
+		<if test="orderNumber != null and orderNumber != ''">
+			AND a.order_number = #{orderNumber}
+		</if>
+
+		<if test="lotteryId != null and lotteryId != ''">
+			AND a.lottery_id = #{lotteryId}
+		</if>
+
+		<if test="wfId != null and wfId != ''">
+			AND wf.id = #{wfId}
+		</if>
+
+		<if test="checkFlag != null and checkFlag != ''">
+			AND a.check_flag = #{checkFlag}
+		</if>
+
+		<if test="orderStatus != null and orderStatus != ''">
+			AND a.order_status = #{orderStatus}
+		</if>
+
+		<if test="finishStatus != null and finishStatus != ''">
+			AND a.finish_status = #{finishStatus}
+		</if>
+
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.create_time DESC
+			</otherwise>
+		</choose>
+
+	</select>
+
+
+
+
+</mapper>

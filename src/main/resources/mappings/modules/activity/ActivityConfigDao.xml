@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.activity.dao.ActivityConfigDao">
+    
+	<sql id="activityConfigColumns">
+		a.id AS "id",
+		a.activity_id AS "activityId",
+		b.title  as   "activityName",
+		a.hd_type AS "hdType",
+		a.label AS "label",
+		a.label2 AS "label2",
+		a.value AS "value",
+		a.value2 AS "value2",
+		a.hd_type_detail AS "hdTypeDetail",
+		a.flow_times AS "flowTimes",
+		a.sort AS "sort",
+		a.description AS "description",
+		a.on_off AS "onOff",
+		a.create_time AS "createTime"
+	</sql>
+	
+	<sql id="activityConfigJoins">
+        join  kk_activity  b  on  a.activity_id = b.id
+	</sql>
+	
+    
+	<select id="get" resultType="com.jeeplus.modules.activity.entity.ActivityConfig" >
+		SELECT 
+			<include refid="activityConfigColumns"/>
+		FROM kk_activity_config a
+		<include refid="activityConfigJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.activity.entity.ActivityConfig" >
+		SELECT 
+			<include refid="activityConfigColumns"/>
+		FROM kk_activity_config a
+		<include refid="activityConfigJoins"/>
+		<where>
+			
+			<if test="hdType != null and hdType != ''">
+				AND a.hd_type LIKE
+					<if test="dbName == 'mysql'">concat('%',#{hdType},'%')</if>
+			</if>
+		</where>
+	</select>
+	
+	<select id="findAllList" resultType="com.jeeplus.modules.activity.entity.ActivityConfig" >
+		SELECT 
+			<include refid="activityConfigColumns"/>
+		FROM kk_activity_config a
+		<include refid="activityConfigJoins"/>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO kk_activity_config(
+			id,
+			activity_id,
+			hd_type,
+			label,
+			label2,
+			value,
+			value2,
+			hd_type_detail,
+			flow_times,
+			sort,
+			description,
+			on_off,
+			create_time
+		) VALUES (
+			#{id},
+			#{activityId},
+			#{hdType},
+			#{label},
+			#{label2},
+			#{value},
+			#{value2},
+			#{hdTypeDetail},
+			#{flowTimes},
+			#{sort},
+			#{description},
+			#{onOff},
+			#{createTime}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE kk_activity_config SET 	
+			id = #{id},
+			activity_id = #{activityId},
+			hd_type = #{hdType},
+			label = #{label},
+			label2 = #{label2},
+			value = #{value},
+			value2 = #{value2},
+			hd_type_detail = #{hdTypeDetail},
+			flow_times = #{flowTimes},
+			sort = #{sort},
+			description = #{description},
+			on_off = #{onOff},
+			create_time = #{createTime}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_activity_config
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE kk_activity_config SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.activity.entity.ActivityConfig" statementType="STATEMENT">
+		select * FROM kk_activity_config  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

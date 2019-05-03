@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.cash.dao.UserChargeGateTypeDao">
+    
+	<sql id="userChargeGateTypeColumns">
+		a.id AS "id",
+		uct.type_name AS "gateType",
+		a.gate_name AS "gateName",
+		a.gate_flag AS "gateFlag",
+		a.sort AS "sort",
+		a.status AS "status",
+		a.gate_img AS "gateImg",
+		a.min_money/1000 as "minMoney",
+		a.max_money/1000 as "maxMoney",
+		a.reserved AS "reserved"
+	</sql>
+	
+	<sql id="userChargeGateTypeJoins">
+		left join kk_user_charge_type uct on a.gate_type = uct.type_flag AND uct.type=1
+
+	</sql>
+
+	<select id="get" resultType="com.jeeplus.modules.cash.entity.UserChargeGateType" >
+		SELECT 
+			<include refid="userChargeGateTypeColumns"/>
+		FROM kk_user_charge_gate_type a
+		<include refid="userChargeGateTypeJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.cash.entity.UserChargeGateType" >
+		SELECT 
+			<include refid="userChargeGateTypeColumns"/>
+		FROM kk_user_charge_gate_type a
+		<include refid="userChargeGateTypeJoins"/>
+		<where>
+			<if test="status != null and status != ''">
+				AND a.status = #{status}
+			</if>
+			<if test="gateType != null and gateType != ''">
+				AND a.gate_type = #{gateType}
+			</if>
+		</where>
+	</select>
+	
+	<select id="findAllList" resultType="com.jeeplus.modules.cash.entity.UserChargeGateType" >
+		SELECT 
+			<include refid="userChargeGateTypeColumns"/>
+		FROM kk_user_charge_gate_type a
+		<include refid="userChargeGateTypeJoins"/>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO kk_user_charge_gate_type(
+			gate_type,
+			gate_name,
+			gate_flag,
+			sort,
+			status,
+			gate_img,
+			min_money,
+			max_money,
+			reserved
+		) VALUES (
+			#{gateType},
+			#{gateName},
+			#{gateFlag},
+			#{sort},
+			#{status},
+			#{gateImg},
+			#{minMoney}*1000,
+			#{maxMoney}*1000,
+			#{reserved}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE kk_user_charge_gate_type SET
+			gate_type = #{gateType},
+			gate_name = #{gateName},
+			gate_flag = #{gateFlag},
+			sort=#{sort},
+			status = #{status},
+			gate_img = #{gateImg},
+			min_money=#{minMoney}*1000,
+			max_money=#{maxMoney}*1000,
+			reserved = #{reserved}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_user_charge_gate_type
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.cash.entity.ChargeMoneySelect" statementType="STATEMENT">
+		select * FROM kk_user_charge_gate_type  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

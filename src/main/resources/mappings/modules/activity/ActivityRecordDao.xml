@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.activity.dao.ActivityRecordDao">
+    
+	<sql id="activityRecordColumns">
+		a.id AS "id",
+		act.title AS "activityId",
+		a.user_id AS "userId",
+		a.apply_time AS "applyTime",
+		a.apply_info AS "applyInfo",
+		a.award_money AS "awardMoney",
+		a.status AS "status",
+		a.check_people  AS  "checkPeople",
+		a.hd_type AS "hdType",
+		a.hd_type_detail AS "hdTypeDetail",
+		a.log_ip AS "logIp",
+		a.remarks AS "remarks"
+	</sql>
+	
+	<sql id="activityRecordJoins">
+		 LEFT JOIN kk_activity act ON a.activity_id=act.id
+	</sql>
+	
+    
+	<select id="get" resultType="com.jeeplus.modules.activity.entity.ActivityRecord" >
+		SELECT
+		    c.reserved  as hdTypeDetailDesc,
+			<include refid="activityRecordColumns"/>
+		FROM kk_actitivy_record a
+		<include refid="activityRecordJoins"/>
+		left join  kk_activity_config  c  on c.hd_type_detail=a.hd_type_detail
+		and  c.hd_type=a.hd_type
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.activity.entity.ActivityRecord" >
+		SELECT 
+			<include refid="activityRecordColumns"/>
+		FROM kk_actitivy_record a
+		<include refid="activityRecordJoins"/>
+		<where>
+			<if test="beginDate != null and beginDate != ''">
+				AND a.apply_time &gt;= #{beginDate}
+			</if>
+			<if test="endDate != null and endDate != ''">
+				AND a.apply_time &lt;= #{endDate}
+			</if>
+			<if test="status != null and status != ''">
+				AND a.status = #{status}
+			</if>
+			<if test="userId != null and userId != ''">
+				AND a.user_id = #{userId}
+			</if>
+		</where>
+		ORDER BY a.apply_time DESC
+	</select>
+	
+	<select id="findAllList" resultType="com.jeeplus.modules.activity.entity.ActivityRecord" >
+		SELECT 
+			<include refid="activityRecordColumns"/>
+		FROM kk_actitivy_record a
+		<include refid="activityRecordJoins"/>
+		ORDER BY a.update_date DESC
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO kk_actitivy_record(
+			id,
+			activity_id,
+			user_id,
+			apply_time,
+			apply_info,
+			award_money,
+			status,
+			hd_type,
+			hd_type_detail,
+			log_ip,
+			remarks
+		) VALUES (
+			#{id},
+			#{activityId},
+			#{userId},
+			#{applyTime},
+			#{applyInfo},
+			#{awardMoney},
+			#{status},
+			#{hdType},
+			#{hdTypeDetail},
+			#{logIp},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE kk_actitivy_record SET 	
+			activity_id = #{activityId},
+			user_id = #{userId},
+			apply_time = #{applyTime},
+			apply_info = #{applyInfo},
+			award_money = #{awardMoney},
+			status = #{status},
+			hd_type = #{hdType},
+			hd_type_detail = #{hdTypeDetail},
+			log_ip = #{logIp},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	<!--清除领取IP-->
+	<update id="deleteIp">
+		UPDATE kk_actitivy_record SET
+		log_ip = ""
+		WHERE log_ip = #{logIp}
+	</update>
+
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_actitivy_record
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE kk_actitivy_record SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.activity.entity.ActivityRecord" statementType="STATEMENT">
+		select * FROM kk_actitivy_record  where ${propertyName} = '${value}'
+	</select>
+
+	<select id="getCountTotalMomeny" resultType="java.lang.Long">
+		select
+		sum(award_money)
+		FROM kk_actitivy_record
+		where 1=1
+		<if test="beginDate != null and beginDate != ''">
+			AND apply_time &gt;= #{beginDate}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			AND apply_time &lt;= #{endDate}
+		</if>
+		<if test="status != null and status != ''">
+			AND status = #{status}
+		</if>
+		<if test="userId != null and userId != ''">
+			AND user_id = #{userId}
+		</if>
+	</select>
+
+	<select id="getTotalStatusBy" resultType="java.lang.Long">
+		select
+		count(*)
+		FROM kk_actitivy_record
+		where 1=1
+		<if test="beginDate != null and beginDate != ''">
+			AND apply_time &gt;= #{beginDate}
+		</if>
+		<if test="endDate != null and endDate != ''">
+			AND apply_time &lt;= #{endDate}
+		</if>
+		<if test="status != null and status != ''">
+			AND status = #{status}
+		</if>
+		<if test="userId != null and userId != ''">
+			AND user_id = #{userId}
+		</if>
+	</select>
+	
+</mapper>

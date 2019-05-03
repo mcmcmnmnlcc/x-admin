@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.cash.dao.BankSkAccountDao">
+    
+	<sql id="bankSkAccountColumns">
+		a.id AS "id",
+		a.sk_type_flag AS "skTypeFlag",
+		a.sk_bank_id AS "skBankId",
+		a.bank_no AS "bankNo",
+		a.bank_name AS "bankName",
+		a.sk_people AS "skPeople",
+		a.account_no AS "accountNo",
+		a.account_kh_name AS "accountKhName",
+		a.account_kh_address AS "accountKhAddress",
+		a.status AS "status",
+		a.chzhi_min_money/1000 AS "chzhiMinMoney",
+		a.chizhi_max_money/1000 AS "chizhiMaxMoney",
+		a.sort AS "sort",
+		a.bind_user_level AS "bindUserLevel",
+		a.remark AS "remark",
+		a.create_time AS "createTime",
+		kat.type_name as skBankName,
+		t.type_name   as skTypeName
+	</sql>
+	
+	<sql id="bankSkAccountJoins">
+		left join kk_account_type kat on a.sk_bank_id=kat.id
+		left join kk_user_charge_type t on a.sk_type_flag =t.type_flag and t.type=2
+	</sql>
+	
+    
+	<select id="get" resultType="com.jeeplus.modules.cash.entity.BankSkAccount" >
+		select
+		a.id AS "id",
+		a.sk_type_flag AS "skTypeFlag",
+		a.sk_bank_id AS "skBankId",
+		a.sk_people AS "skPeople",
+		a.account_no AS "accountNo",
+		a.account_kh_address AS "accountKhAddress",
+		a.status AS "status",
+		a.chzhi_min_money/1000 AS "chzhiMinMoney",
+		a.chizhi_max_money/1000 AS "chizhiMaxMoney",
+		a.bind_user_level AS "bindUserLevel",
+		a.remark AS "remark",
+		a.qrcode AS "qrcode",
+		a.create_time AS "createTime",
+		kat.type_name as skBankName,
+		t.type_name   as skTypeName
+		FROM kk_bank_sk_account a
+		left join kk_account_type kat on a.sk_bank_id=kat.id
+		left join kk_user_charge_type t on a.sk_type_flag =t.type_flag and t.type=2
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.cash.entity.BankSkAccount" >
+		select
+		a.id AS "id",
+		a.sk_type_flag AS "skTypeFlag",
+		a.sk_bank_id AS "skBankId",
+		a.sk_people AS "skPeople",
+		a.account_no AS "accountNo",
+		a.account_kh_address AS "accountKhAddress",
+		a.status AS "status",
+		a.chzhi_min_money/1000 AS "chzhiMinMoney",
+		a.chizhi_max_money/1000 AS "chizhiMaxMoney",
+		a.bind_user_level AS "bindUserLevel",
+		a.remark AS "remark",
+		a.qrcode AS "qrcode",
+		a.create_time AS "createTime",
+		kat.type_name as skBankName,
+		t.type_name   as skTypeName
+		FROM kk_bank_sk_account a
+		left join kk_account_type kat on a.sk_bank_id=kat.id
+		left join kk_user_charge_type t on a.sk_type_flag =t.type_flag and t.type=2
+
+		<where>
+			<if test="skTypeFlag != null and skTypeFlag != ''">
+				AND a.sk_type_flag = #{skTypeFlag}
+			</if>
+
+			<if test="skBankId != null and skBankId != ''">
+				AND a.sk_bank_id = #{skBankId}
+			</if>
+			<if test="status != null and status != ''">
+				AND a.status = #{status}
+			</if>
+		</where>
+		ORDER BY a.create_time  desc
+	</select>
+	
+	<select id="findAllList" resultType="com.jeeplus.modules.cash.entity.BankSkAccount" >
+		SELECT 
+			<include refid="bankSkAccountColumns"/>
+		FROM kk_bank_sk_account a
+		<include refid="bankSkAccountJoins"/>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO kk_bank_sk_account(
+		    sk_type_flag,
+			sk_bank_id,
+			bank_no,
+			bank_name,
+			sk_people,
+			account_no,
+			account_kh_name,
+			account_kh_address,
+			status,
+			chzhi_min_money,
+			chizhi_max_money,
+			sort,
+			bind_user_level,
+			remark,
+			qrcode,
+			create_time
+		) VALUES (
+		    #{skTypeFlag},
+			#{skBankId},
+			#{bankNo},
+			#{bankName},
+			#{skPeople},
+			#{accountNo},
+			#{accountKhName},
+			#{accountKhAddress},
+			#{status},
+			#{chzhiMinMoney}*1000,
+			#{chizhiMaxMoney}*1000,
+			#{sort},
+			#{bindUserLevel},
+			#{remark},
+			#{qrcode},
+			now()
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE kk_bank_sk_account SET 	
+			sk_type_flag = #{skTypeFlag},
+			sk_bank_id = #{skBankId},
+			bank_no = #{bankNo},
+			bank_name = #{bankName},
+			sk_people = #{skPeople},
+			account_no = #{accountNo},
+			account_kh_name = #{accountKhName},
+			account_kh_address = #{accountKhAddress},
+			status = #{status},
+			chzhi_min_money = #{chzhiMinMoney}*1000,
+			chizhi_max_money = #{chizhiMaxMoney}*1000,
+			sort = #{sort},
+			bind_user_level = #{bindUserLevel},
+			remark = #{remark},
+			qrcode = #{qrcode},
+			create_time = #{createTime}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_bank_sk_account
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE kk_bank_sk_account SET
+			del_flag = #{delFlag}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.cash.entity.BankSkAccount" statementType="STATEMENT">
+		select * FROM kk_bank_sk_account  where ${propertyName} = '${value}'
+	</select>
+
+	<select id="getLevelNames" resultType="java.lang.String" >
+		select  GROUP_CONCAT(l.level_description) from  kk_user_level_set l
+         where   id   in(${ids})
+	</select>
+
+
+	<update id="updateState">
+	UPDATE kk_bank_sk_account SET
+		status = #{status}
+		WHERE id = #{id}
+
+	</update>
+
+	<select id="getStatusCount"  resultType="java.lang.Integer">
+		select count(1)
+		from kk_bank_sk_account
+		where  status != 0
+		and sk_type_flag = #{skTypeFlag}
+	</select>
+
+
+</mapper>

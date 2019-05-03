@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.cash.dao.UserChargeTypeDao">
+    
+	<sql id="userChargeTypeColumns">
+		a.id AS "id",
+		a.type_flag AS "typeFlag",
+		a.type_name AS "typeName",
+		a.min_money/1000  AS  minMoney,
+		a.max_money/1000  AS  maxMoney,
+		a.sort AS "sort",
+		a.status AS "status",
+		a.type AS "type",
+		a.position AS "position",
+		a.reserved AS "reserved"
+	</sql>
+	
+	<sql id="userChargeTypeJoins">
+		left join kk_account_type kat on a.type_flag = kat.id AND a.type=1
+
+	</sql>
+
+	<select id="get" resultType="com.jeeplus.modules.cash.entity.UserChargeType" >
+		SELECT 
+			<include refid="userChargeTypeColumns"/>
+		FROM kk_user_charge_type a
+		<include refid="userChargeTypeJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.cash.entity.UserChargeType" >
+		SELECT 
+			<include refid="userChargeTypeColumns"/>
+		FROM kk_user_charge_type a
+		<include refid="userChargeTypeJoins"/>
+		<where>
+			<if test="status != null and status != ''">
+				AND a.status = #{status}
+			</if>
+			<if test="type != null and type != ''">
+				AND a.type = #{type}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+
+			<otherwise>
+
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="com.jeeplus.modules.cash.entity.UserChargeType" >
+		SELECT 
+			<include refid="userChargeTypeColumns"/>
+		FROM kk_user_charge_type a
+		<include refid="userChargeTypeJoins"/>
+		<where>
+
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO kk_user_charge_type(
+			type_flag,
+			type_name,
+			min_money,
+			max_money,
+			sort,
+			status,
+			type,
+			position,
+			reserved
+		) VALUES (
+			#{typeFlag},
+			#{typeName},
+			#{minMoney}*1000,
+			#{maxMoney}*1000,
+			#{sort},
+			#{status},
+			#{type},
+			#{position},
+			#{reserved}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE kk_user_charge_type SET
+			type_flag = #{typeFlag},
+			type_name = #{typeName},
+			min_money=#{minMoney}*1000,
+			max_money=#{maxMoney}*1000,
+			sort=#{sort},
+			status = #{status},
+			type = #{type},
+			position=#{position},
+			reserved = #{reserved}
+		WHERE id = #{id}
+	</update>
+
+	<update id="lockOrOpen">
+		UPDATE kk_user_charge_type
+		SET status =
+		CASE WHEN status = 1 THEN 0
+		WHEN status = 0 THEN 1
+		ELSE 0
+		END
+		WHERE id = #{id}
+	</update>
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_user_charge_type
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE kk_user_charge_type SET
+			del_flag = #{delFlag}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.cash.entity.ChargeMoneySelect" statementType="STATEMENT">
+		select * FROM kk_user_charge_type  where ${propertyName} = '${value}'
+	</select>
+
+    <!-- 根据显示状态修改下一层对应的状态-->
+	<update id="updateStatus">
+		UPDATE kk_user_charge_type a
+		LEFT JOIN kk_bank_sk_account  b ON  b.sk_type_flag = a.type_flag and a.type ='2'
+	  	left join kk_user_online_charge_gate  t  on  t.reserved = a.type_flag  and a.type ='1'
+   		left join kk_third_trade_account  f on  f.pay_account_type = t.value
+		SET b.status = a.status, f.status = a.status
+		where a.id = #{id}
+	</update>
+	
+</mapper>

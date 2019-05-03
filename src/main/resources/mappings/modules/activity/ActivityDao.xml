@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.activity.dao.ActivityDao">
+    
+	<sql id="activityColumns">
+		a.id AS "id",
+		a.image_url AS "imageUrl",
+		a.title AS "title",
+		a.turn_url AS "turnUrl",
+		a.status AS "status",
+		a.activity_type AS "activityType",
+		a.hot_click AS "hotClick",
+		a.hd_on_off as "hdOnOff",
+		a.hd_type as "hdType",
+		a.remarks AS "remarks",
+		a.create_time AS "createTime"
+	</sql>
+	
+	<sql id="activityJoins">
+	</sql>
+	
+    
+	<select id="get" resultType="com.jeeplus.modules.activity.entity.Activity" >
+		SELECT 
+			<include refid="activityColumns"/>
+		FROM kk_activity a
+		<include refid="activityJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.activity.entity.Activity" >
+		SELECT 
+			<include refid="activityColumns"/>
+		FROM kk_activity a
+		<include refid="activityJoins"/>
+		<where>
+			
+			<if test="title != null and title != ''">
+				AND a.title LIKE 
+					<if test="dbName == 'oracle'">'%'||#{title}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{title}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{title},'%')</if>
+			</if>
+			<if test="status != null and status != ''">
+				AND a.status = #{status}
+			</if>
+			<if test="hdOnOff != null and hdOnOff != ''">
+				AND a.hd_on_off = #{hdOnOff}
+			</if>
+			<if test="activityType != null and activityType != ''">
+				AND a.activity_type = #{activityType}
+			</if>
+			<if test="createTime != null and createTime != ''">
+				AND a.create_time = #{createTime}
+			</if>
+		</where>
+
+	</select>
+	
+	<select id="findAllList" resultType="com.jeeplus.modules.activity.entity.Activity" >
+		SELECT 
+			<include refid="activityColumns"/>
+		FROM kk_activity a
+		<include refid="activityJoins"/>
+		<where>
+			
+		</where>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO kk_activity(
+			image_url,
+			title,
+			turn_url,
+			status,
+			activity_type,
+			hot_click,
+			hd_on_off,
+			hd_type,
+			remarks,
+			create_time
+		) VALUES (
+			#{imageUrl},
+			#{title},
+			#{turnUrl},
+			#{status},
+			#{activityType},
+			#{hotClick},
+			#{hdOnOff},
+			#{hdType},
+			#{remarks},
+			#{createTime}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE kk_activity SET 	
+			id = #{id},
+			image_url = #{imageUrl},
+			title = #{title},
+			turn_url = #{turnUrl},
+			status = #{status},
+			activity_type = #{activityType},
+			hot_click = #{hotClick},
+			hd_on_off = #{hdOnOff},
+			hd_type = #{hdType},
+			remarks = #{remarks},
+			create_time = #{createTime}
+		WHERE id = #{id}
+	</update>
+
+
+	<update id="lockOrOpen">
+		UPDATE kk_activity
+		SET hd_on_off =
+		CASE WHEN hd_on_off = 1 THEN 0
+		WHEN hd_on_off = 0 THEN 1
+		ELSE 0
+		END
+		WHERE id = #{id}
+	</update>
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_activity
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE kk_activity SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.activity.entity.Activity" statementType="STATEMENT">
+		select * FROM kk_activity  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

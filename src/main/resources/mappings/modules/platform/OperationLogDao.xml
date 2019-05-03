@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.platform.dao.OperationLogDao">
+    
+	<sql id="operationLogColumns">
+		a.id AS "id",
+		a.user_id AS "userId",
+		a.opt_modular AS "optModular",
+		a.opt_admin AS "optAdmin",
+		a.status AS "status",
+		a.return_msg AS "returnMsg",
+		a.create_time AS "createTime",
+		a.opt_ip AS "optIp",
+		a.content AS "content"
+	</sql>
+	
+	<sql id="operationLogJoins">
+	</sql>
+	
+    
+	<select id="get" resultType="com.jeeplus.modules.platform.entity.OperationLog" >
+		SELECT 
+			<include refid="operationLogColumns"/>
+		FROM kk_operation_log a
+		<include refid="operationLogJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.platform.entity.OperationLog" >
+		SELECT 
+			<include refid="operationLogColumns"/>
+		FROM kk_operation_log a
+		<include refid="operationLogJoins"/>
+		<where>
+			
+			<if test="userId != null and userId != ''">
+				AND a.user_id = #{userId}
+			</if>
+			<if test="optModular != null and optModular != ''">
+				AND a.opt_modular LIKE
+					<if test="dbName == 'mysql'">concat('%',#{optModular},'%')</if>
+			</if>
+			<if test="optIp != null and optIp != ''">
+				AND a.opt_ip LIKE
+				<if test="dbName == 'mysql'">concat('%',#{optIp},'%')</if>
+			</if>
+			<if test="status != null and status != ''">
+				AND a.status = #{status}
+			</if>
+			<if test="beginCreateTime != null and endCreateTime != null and beginCreateTime != '' and endCreateTime != ''">
+				AND a.create_time BETWEEN #{beginCreateTime} AND #{endCreateTime}
+			</if>
+			<if test="content != null and content != ''">
+				AND a.content LIKE
+					<if test="dbName == 'mysql'">concat('%',#{content},'%')</if>
+			</if>
+		</where>
+		ORDER BY a.id desc
+	</select>
+	
+	<select id="findAllList" resultType="com.jeeplus.modules.platform.entity.OperationLog" >
+		SELECT 
+			<include refid="operationLogColumns"/>
+		FROM kk_operation_log a
+		<include refid="operationLogJoins"/>
+		<where>
+			
+		</where>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO kk_operation_log(
+			user_id,
+			opt_modular,
+			opt_admin,
+			status,
+			return_msg,
+			create_time,
+			opt_ip,
+			content
+		) VALUES (
+			#{userId},
+			#{optModular},
+			#{optAdmin},
+			#{status},
+			#{returnMsg},
+			now(),
+			#{optIp},
+			#{content}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE kk_operation_log SET 	
+			id = #{id},
+			user_id = #{userId},
+			opt_modular = #{optModular},
+			opt_admin = #{optAdmin},
+			status = #{status},
+			return_msg = #{returnMsg},
+			create_time = #{createTime},
+			opt_ip = #{optIp},
+			content = #{content}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM kk_operation_log
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE kk_operation_log SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.platform.entity.OperationLog" statementType="STATEMENT">
+		select * FROM kk_operation_log  where ${propertyName} = '${value}'
+	</select>
+
+	<insert id="insertForFactory">
+		INSERT INTO kk_operation_log(
+		user_id,
+		opt_modular,
+		opt_admin,
+		content,
+		opt_ip,
+		status,
+		return_msg,
+		create_time)
+		VALUES (
+		#{userId},
+		#{optModular},
+		#{optAdmin},
+		#{content},
+		#{optIp},
+		#{status},
+		#{returnMsg},
+		NOW())
+	</insert>
+</mapper>

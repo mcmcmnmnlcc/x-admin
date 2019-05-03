@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jeeplus.modules.lottery.dao.order.LotteryOrderDao">
+
+
+	<sql id="lotteryOrderColumns">
+		a.id AS "id",
+		a.lottery_qh   AS  lotteryQh,
+		a.order_number                                  AS "orderNumber",
+		a.kj_number                                     as kjNumber,
+		a.lottery_id AS "lottery.id",
+		l.lottery_name AS "lottery.lotteryName",
+		a.wf_flag AS "wf.wfFlag",
+		wf.name as "wf.name",
+		a.pfm_user_id as  pfmUserId,
+		a.bet_number                                    AS "betNumber",
+		truncate(a.bet_money/1000,2)  AS "betMoney",
+		a.bet_valid_money/1000  AS "betValidMoney",
+		a.bet_times                                     as betTimes,
+		a.bet_count                                     as betCount,
+		a.reward_money/1000                             as rewardMoney,
+		a.max_return_point/100                          as maxReturnPoint,
+		a.max_return_money/1000                         as maxReturnMoney,
+		a.win_count                                     as winCount,
+		truncate(a.win_money/1000,2)                    AS "winMoney",
+		truncate(a.prof_or_loss/1000,2)                 as profOrLoss,
+		a.status                                        AS "status",
+		a.lottery_modes                                 as lotteryModes,
+		a.zhuidan_id                                    AS "zhuidan",
+		a.zhuidan_mode                                  as zhuidanMode,
+		a.create_date AS "createDate",
+		a.kj_date    As   "kjDate",
+		a.remarks AS "remarks"
+	</sql>
+	
+	<sql id="lotteryOrderJoins">
+		left join kk_lottery_type l on a.lottery_id =l.flag
+		left join kk_wf wf on a.wf_flag =wf.wf_flag
+	</sql>
+	
+	<select id="getCount" resultType="int">
+		select count(*) FROM kk_lottery_order
+	</select>
+	
+    
+	<select id="get" resultType="com.jeeplus.modules.lottery.entity.order.LotteryOrder" >
+		SELECT 
+			<include refid="lotteryOrderColumns"/>
+		FROM kk_lottery_order a
+		<include refid="lotteryOrderJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="com.jeeplus.modules.lottery.entity.order.LotteryOrder" >
+		SELECT 
+			<include refid="lotteryOrderColumns"/>
+		FROM kk_lottery_order a
+		<include refid="lotteryOrderJoins"/>
+		inner JOIN kk_platform_user p ON p.user_id = a.pfm_user_id
+		where
+		 1=1
+		<if test="agent != null and agent != ''">
+			and p.agent_by = #{agent}
+		</if>
+		<if test="searchTime == null or searchTime == '' or searchTime == '1'.toString()">
+			<if test="beginDate != null and beginDate != ''">
+				AND a.create_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND a.create_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="searchTime == '2'.toString()">
+
+			<if test="beginDate != null and beginDate != ''">
+				AND a.kj_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND a.kj_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+			<if test="lotteryQh != null and lotteryQh != ''">
+				AND a.lottery_qh = #{lotteryQh}
+			</if>
+			<if test="pfmUserId != null and pfmUserId != ''">
+				AND a.pfm_user_id = #{pfmUserId}
+			</if>
+			<if test="orderNumber != null and orderNumber != ''">
+				AND a.order_number = #{orderNumber}
+			</if>
+			<if test="lottery!=null and lottery.id != null  and lottery.id != ''">
+				AND a.lottery_id = #{lottery.id}
+			</if>
+			<if test="wf!=null and wf.id != null  and wf.id != ''">
+				AND wf.id = #{wf.id}
+			</if>
+			<if test="betNumber != null and betNumber != ''">
+				AND a.bet_number = #{betNumber}
+			</if>
+			<if test="betMoney != null and betMoney != ''">
+				AND a.bet_money = #{betMoney}
+			</if>
+			<if test="betValidMoney != null and betValidMoney != ''">
+				AND a.bet_valid_money = #{betValidMoney}
+			</if>
+			<if test="winMoney != null and winMoney != ''">
+				AND a.win_money = #{winMoney}
+			</if>
+			<if test="status != null and status != ''">
+				AND a.status = #{status}
+			</if>
+			<if test="zhuidan != null and zhuidan != ''">
+				AND a.zhuidan_id = #{zhuidan}
+			</if>
+			<if test="bMoney != null and bMoney != ''">
+				AND a.bet_money &gt;= #{bMoney}*1000
+			</if>
+			<if test="eMoney != null and eMoney != ''">
+				AND a.bet_money &lt;= #{eMoney}*1000
+			</if>
+			ORDER BY a.create_date ,a.lottery_qh DESC
+	</select>
+
+	<!-- 以前的太慢，我改写的 -->
+	<select id="findList_v2" resultType="com.jeeplus.modules.lottery.entity.order.LotteryOrder" >
+		SELECT
+		<include refid="lotteryOrderColumns"/>
+		FROM (SELECT aa.* from kk_lottery_order aa ORDER BY aa.create_date DESC LIMIT #{startIndex},#{pageSize}) a
+		<include refid="lotteryOrderJoins"/>
+		inner JOIN kk_platform_user p ON p.user_id = a.pfm_user_id
+		where
+		1=1
+		<if test="agent != null and agent != ''">
+			and p.agent_by = #{agent}
+		</if>
+		<if test="searchTime == null or searchTime == '' or searchTime == '1'.toString()">
+			<if test="beginDate != null and beginDate != ''">
+				AND a.create_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND a.create_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="searchTime == '2'.toString()">
+
+			<if test="beginDate != null and beginDate != ''">
+				AND a.kj_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND a.kj_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="lotteryQh != null and lotteryQh != ''">
+			AND a.lottery_qh = #{lotteryQh}
+		</if>
+		<if test="pfmUserId != null and pfmUserId != ''">
+			AND a.pfm_user_id = #{pfmUserId}
+		</if>
+		<if test="orderNumber != null and orderNumber != ''">
+			AND a.order_number = #{orderNumber}
+		</if>
+		<if test="lottery!=null and lottery.id != null  and lottery.id != ''">
+			AND a.lottery_id = #{lottery.id}
+		</if>
+		<if test="wf!=null and wf.id != null  and wf.id != ''">
+			AND wf.id = #{wf.id}
+		</if>
+		<if test="betNumber != null and betNumber != ''">
+			AND a.bet_number = #{betNumber}
+		</if>
+		<if test="betMoney != null and betMoney != ''">
+			AND a.bet_money = #{betMoney}
+		</if>
+		<if test="betValidMoney != null and betValidMoney != ''">
+			AND a.bet_valid_money = #{betValidMoney}
+		</if>
+		<if test="winMoney != null and winMoney != ''">
+			AND a.win_money = #{winMoney}
+		</if>
+		<if test="status != null and status != ''">
+			AND a.status = #{status}
+		</if>
+		<if test="zhuidan != null and zhuidan != ''">
+			AND a.zhuidan_id = #{zhuidan}
+		</if>
+		<if test="bMoney != null and bMoney != ''">
+			AND a.bet_money &gt;= #{bMoney}*1000
+		</if>
+		<if test="eMoney != null and eMoney != ''">
+			AND a.bet_money &lt;= #{eMoney}*1000
+		</if>
+		ORDER BY a.create_date ,a.lottery_qh DESC
+	</select>
+
+	<select id="findListBy" resultType="com.jeeplus.modules.lottery.entity.order.LotteryOrder" >
+		SELECT
+		<include refid="lotteryOrderColumns"/>
+		FROM kk_lottery_order a
+		<include refid="lotteryOrderJoins"/>
+		inner JOIN kk_platform_user p ON p.user_id = a.pfm_user_id
+		WHERE
+		1=1
+		<if test="agent != null and agent != ''">
+			and p.agent_by = #{agent}
+		</if>
+		<if test="searchTime == null or searchTime == '' or searchTime == '1'.toString()">
+			<if test="beginDate != null and beginDate != ''">
+				AND a.create_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND a.create_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="searchTime == '2'.toString()">
+
+			<if test="beginDate != null and beginDate != ''">
+				AND a.kj_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND a.kj_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="lotteryQh != null and lotteryQh != ''">
+			AND a.lottery_qh = #{lotteryQh}
+		</if>
+		<if test="pfmUserId != null and pfmUserId != ''">
+			AND a.pfm_user_id = #{pfmUserId}
+		</if>
+		<if test="orderNumber != null and orderNumber != ''">
+			AND a.order_number = #{orderNumber}
+		</if>
+		<if test="lottery==null or lottery.id=='bj28'">
+			AND a.lottery_id != 'bj28'
+		</if>
+		<if test="lottery!=null and lottery.id != null  and lottery.id != '' and lottery.id !='bj28' ">
+			AND a.lottery_id = #{lottery.id}
+		</if>
+		<if test="wf!=null and wf.id != null  and wf.id != ''">
+			AND wf.id = #{wf.id}
+		</if>
+		<if test="betNumber != null and betNumber != ''">
+			AND a.bet_number = #{betNumber}
+		</if>
+		<if test="betMoney != null and betMoney != ''">
+			AND a.bet_money = #{betMoney}
+		</if>
+		<if test="betValidMoney != null and betValidMoney != ''">
+			AND a.bet_valid_money = #{betValidMoney}
+		</if>
+		<if test="winMoney != null and winMoney != ''">
+			AND a.win_money = #{winMoney}
+		</if>
+		<if test="status != null and status != ''">
+			AND a.status = #{status}
+		</if>
+		<if test="zhuidan != null and zhuidan != ''">
+			AND a.zhuidan_id = #{zhuidan}
+		</if>
+		<if test="bMoney != null and bMoney != ''">
+			AND a.bet_money &gt;= #{bMoney}*1000
+		</if>
+		<if test="eMoney != null and eMoney != ''">
+			AND a.bet_money &lt;= #{eMoney}*1000
+		</if>
+		ORDER BY a.create_date DESC
+	</select>
+	
+	<select id="findAllList" resultType="com.jeeplus.modules.lottery.entity.order.LotteryOrder" >
+		SELECT 
+			<include refid="lotteryOrderColumns"/>
+		FROM kk_lottery_order a
+		<include refid="lotteryOrderJoins"/>
+
+		ORDER BY a.create_date DESC
+	</select>
+	
+	<!--<insert id="insert">
+		INSERT INTO kk_lottery_order(
+			lottery_qh,
+			order_number,
+			lottery_id,
+			wf_id,
+			bet_number,
+			bet_times,
+			bet_count,
+			bet_money,
+			reward_money,
+			max_return_point,
+            lottery_modes,
+			status,
+			zhuidan_id,
+			pfm_user_id,
+			create_date,
+			remarks
+		) VALUES (
+			#{lotteryQh},
+			#{orderNumber},
+			#{lottery.id},
+			#{wf.id},
+			#{betNumber},
+			#{betTimes},
+			#{betCount},
+			#{betMoney},
+			#{rewardMoney},
+			#{maxReturnPoint},
+			#{lotteryModes},
+			'0',
+			#{zhuidan},
+			#{pfmUserId},
+			#{createDate},
+			#{remarks}
+		)
+	</insert>-->
+	
+	<!--<update id="update">
+		UPDATE kk_lottery_order SET 	
+			lottery_qh = #{lotteryQh},
+			order_number = #{orderNumber},
+			lottery_id = #{lottery.id},
+			wf_id = #{wf.id},
+			bet_number = #{betNumber},
+			bet_money = #{betMoney},
+			bet_valid_money = #{betValidMoney},
+			win_money = #{winMoney},
+			status = #{status},
+			zhuidan_id = #{zhuidan},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>-->
+	
+	
+	<!--<update id="delete">
+		DELETE FROM kk_lottery_order
+		WHERE id = #{id}
+	</update>
+	
+	<update id="deleteByLogic">
+		UPDATE kk_lottery_order SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>-->
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="com.jeeplus.modules.lottery.entity.order.LotteryOrder" statementType="STATEMENT">
+		select * FROM kk_lottery_order  where ${propertyName} = '${value}'
+	</select>
+
+	<select id="findWfPlByWfId"  resultType="com.jeeplus.modules.lottery.entity.order.LotteryOrderPl">
+        select
+			a.wf_flag AS wfFlag,
+			#{orderNumber} as "orderNumber",
+			a.sort AS "plFlag"
+         from kk_wf_pl_child  a
+         where a.wf_flag =#{wfMainId}
+	</select>
+
+	<insert id="saveOrderPl">
+		insert into  kk_lottery_order_pl_detail (wf_flag,order_number,pl_flag,award_money,win_calc_count)
+		   VALUES
+		   <foreach collection="list" item="item" index="index" separator=",">
+			   (#{item.wf_flag},#{item.orderNumber},#{item.plFlag},#{item.awardMoney},#{item.winCalcCount})
+		   </foreach>
+
+	</insert>
+
+	<select id="findLotteryNameAndQh" resultType="java.util.HashMap">
+         select
+               o.lottery_qh  as qh,
+		       t.lottery_name as name
+             from kk_lottery_order o ,kk_lottery_type t
+             where o.lottery_id =#{lotteryId} and o.lottery_qh =#{lotteryQh}
+                    and o.lottery_id=t.id
+	</select>
+
+	<select id="findWfByLotteryId" resultType="com.jeeplus.modules.lottery.entity.wf.WfMain">
+		select w.name,w.id
+			 from kk_wf w,kk_lottery_type t
+			 where w.lottery_type =t.lottery_type and t.flag =#{lotteryType}
+			 order by w.sort asc
+	</select>
+
+	<select id="getTotalMoney" resultType="com.jeeplus.modules.lottery.entity.order.LotteryOrder">
+		SELECT
+		truncate(sum(a.bet_money)/1000,2) as  betMoney,
+		truncate(sum(a.bet_valid_money)/1000,2) as  betValidMoney,
+		truncate(sum(a.win_money)/1000,2) as  winMoney,
+		truncate(sum(a.prof_or_loss)/1000,2) as  profOrLoss
+		FROM kk_lottery_order a
+		<include refid="lotteryOrderJoins"/>
+		inner JOIN kk_platform_user p ON p.user_id = a.pfm_user_id
+		WHERE
+		1=1
+		<if test="agent != null and agent != ''">
+			and p.agent_by = #{agent}
+		</if>
+		<if test="searchTime == null or searchTime == '' or searchTime == '1'.toString()">
+			<if test="beginDate != null and beginDate != ''">
+				AND a.create_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND a.create_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="searchTime == '2'.toString()">
+
+			<if test="beginDate != null and beginDate != ''">
+				AND a.kj_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND a.kj_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="lotteryQh != null and lotteryQh != ''">
+			AND a.lottery_qh = #{lotteryQh}
+		</if>
+		<if test="pfmUserId != null and pfmUserId != ''">
+			AND a.pfm_user_id = #{pfmUserId}
+		</if>
+		<if test="orderNumber != null and orderNumber != ''">
+			AND a.order_number = #{orderNumber}
+		</if>
+		<if test="lottery==null or lottery.id=='bj28'">
+			AND a.lottery_id != 'bj28'
+		</if>
+		<if test="lottery!=null and lottery.id != null  and lottery.id != '' and lottery.id !='bj28' ">
+			AND a.lottery_id = #{lottery.id}
+		</if>
+		<if test="wf!=null and wf.id != null  and wf.id != ''">
+			AND wf.id = #{wf.id}
+		</if>
+		<if test="betNumber != null and betNumber != ''">
+			AND a.bet_number = #{betNumber}
+		</if>
+		<if test="betMoney != null and betMoney != ''">
+			AND a.bet_money = #{betMoney}
+		</if>
+		<if test="betValidMoney != null and betValidMoney != ''">
+			AND a.bet_valid_money = #{betValidMoney}
+		</if>
+		<if test="winMoney != null and winMoney != ''">
+			AND a.win_money = #{winMoney}
+		</if>
+
+		<if test="status== '1'.toString() or status== '3'.toString()">
+			AND a.status = #{status}
+		</if>
+
+		<if test="status== null or status== ''">
+			AND a.status  in ('1','3')
+		</if>
+
+		<if test="zhuidan != null and zhuidan != ''">
+			AND a.zhuidan_id = #{zhuidan}
+		</if>
+		<if test="bMoney != null and bMoney != ''">
+			AND a.bet_money &gt;= #{bMoney}*1000
+		</if>
+		<if test="eMoney != null and eMoney != ''">
+			AND a.bet_money &lt;= #{eMoney}*1000
+		</if>
+
+	</select>
+
+
+	<select id="getTotalMoneyBybj28" resultType="com.jeeplus.modules.lottery.entity.order.LotteryOrder">
+		SELECT
+		truncate(sum(a.bet_money)/1000,2) as  betMoney,
+		truncate(sum(a.bet_valid_money)/1000,2) as  betValidMoney,
+		truncate(sum(a.win_money)/1000,2) as  winMoney,
+		truncate(sum(a.prof_or_loss)/1000,2) as  profOrLoss
+		FROM kk_lottery_order a
+		<include refid="lotteryOrderJoins"/>
+		inner JOIN kk_platform_user p ON p.user_id = a.pfm_user_id
+		WHERE
+		1=1
+		<if test="agent != null and agent != ''">
+			and p.agent_by = #{agent}
+		</if>
+		<if test="searchTime == null or searchTime == '' or searchTime == '1'.toString()">
+			<if test="beginDate != null and beginDate != ''">
+				AND a.create_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND a.create_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="searchTime == '2'.toString()">
+
+			<if test="beginDate != null and beginDate != ''">
+				AND a.kj_date &gt;= #{beginDate}
+			</if>
+
+			<if test="endDate != null and endDate != ''">
+				AND a.kj_date &lt;= #{endDate}
+			</if>
+
+		</if>
+
+		<if test="lotteryQh != null and lotteryQh != ''">
+			AND a.lottery_qh = #{lotteryQh}
+		</if>
+		<if test="pfmUserId != null and pfmUserId != ''">
+			AND a.pfm_user_id = #{pfmUserId}
+		</if>
+		<if test="orderNumber != null and orderNumber != ''">
+			AND a.order_number = #{orderNumber}
+		</if>
+		<if test="lottery!=null and lottery.id != null  and lottery.id != ''">
+			AND a.lottery_id = #{lottery.id}
+		</if>
+		<if test="wf!=null and wf.id != null  and wf.id != ''">
+			AND wf.id = #{wf.id}
+		</if>
+		<if test="betNumber != null and betNumber != ''">
+			AND a.bet_number = #{betNumber}
+		</if>
+		<if test="betMoney != null and betMoney != ''">
+			AND a.bet_money = #{betMoney}
+		</if>
+		<if test="betValidMoney != null and betValidMoney != ''">
+			AND a.bet_valid_money = #{betValidMoney}
+		</if>
+		<if test="winMoney != null and winMoney != ''">
+			AND a.win_money = #{winMoney}
+		</if>
+
+		<if test="status== '1'.toString() or status== '3'.toString()">
+			AND a.status = #{status}
+		</if>
+
+		<if test="status== null or status== ''">
+			AND a.status  in ('1','3')
+		</if>
+
+
+		<if test="zhuidan != null and zhuidan != ''">
+			AND a.zhuidan_id = #{zhuidan}
+		</if>
+		<if test="bMoney != null and bMoney != ''">
+			AND a.bet_money &gt;= #{bMoney}*1000
+		</if>
+		<if test="eMoney != null and eMoney != ''">
+			AND a.bet_money &lt;= #{eMoney}*1000
+		</if>
+
+	</select>
+
+</mapper>
